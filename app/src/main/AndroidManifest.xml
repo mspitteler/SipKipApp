@@ -3,10 +3,23 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <!-- <= 30 + Xiaomi/MIUI. -->
     <uses-permission android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30"/>
+
+    <!-- From official Android docs:
+         - ACCESS_FINE_LOCATION is necessary because, on Android 11 and lower, a Bluetooth scan could potentially be used to gather information about the location of the user.
+         - If your app targets Android 9 (API level 28) or lower, you can declare the ACCESS_COARSE_LOCATION permission instead of the ACCESS_FINE_LOCATION permission. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"
+        android:maxSdkVersion="28"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:minSdkVersion="29"
+        android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"
+        android:minSdkVersion="29"
         android:maxSdkVersion="30"/>
 
     <!-- Needed only if your app communicates with already-paired Bluetooth devices >= API 31. -->

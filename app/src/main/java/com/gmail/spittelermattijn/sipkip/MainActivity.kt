@@ -166,9 +166,9 @@ class MainActivity : AppCompatActivity() {
     private val receiver = object : BroadcastReceiver() {
         private var foundDevice = false
 
-        inline fun <reified T : Parcelable> Intent.parcelable(key: String): T? = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelableExtra(key, T::class.java)
-            else -> @Suppress("Deprecation") getParcelableExtra(key) as? T
+        inline fun <reified T : Parcelable> Intent.parcelable(key: String): T = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelableExtra(key, T::class.java)!!
+            else -> @Suppress("Deprecation") (getParcelableExtra(key) as T?)!!
         }
 
         @SuppressLint("MissingPermission")
@@ -178,18 +178,18 @@ class MainActivity : AppCompatActivity() {
                 BluetoothDevice.ACTION_FOUND -> {
                     // Discovery has found a device. Get the BluetoothDevice
                     // object and its info from the Intent.
-                    val device: BluetoothDevice? = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
-                    val deviceName = device?.name
+                    val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
+                    val deviceName = device.name
                     if (deviceName == Constants.BLUETOOTH_DEVICE_NAME) {
-                        // Bond the device via GATT, since BluetoothDevice::createBond doesn't seem to work.
-                        device.connectGatt(context, false, object: BluetoothGattCallback() { })
+                        device.createBond()
                         foundDevice = true
                         if (bluetoothAdapter.isDiscovering)
                             bluetoothAdapter.cancelDiscovery()
                     }
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                    bluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
+                    val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
+                    bluetoothDevice = bluetoothAdapter.getRemoteDevice(device.address)
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED ->
                     Toast.makeText(context, "Discovery of bluetooth devices (re)started", Toast.LENGTH_SHORT).show()

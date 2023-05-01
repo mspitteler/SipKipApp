@@ -15,6 +15,13 @@ import androidx.activity.result.ActivityResultLauncher
 import kotlin.reflect.KFunction0
 
 object BluetoothUtil {
+    private val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
+        arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH)
+    else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R)
+        arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH)
+    else
+        arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN)
+
     /**
      * sort by name, then address. sort named devices first
      */
@@ -45,7 +52,8 @@ object BluetoothUtil {
     private fun showSettingsDialog(activity: Activity) {
         @SuppressLint("DiscouragedApi") val s = activity.resources.getString(
             activity.resources.getIdentifier(
-                "@android:string/permgrouplab_nearby_devices",
+                "@android:string/" + if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) "permgrouplab_location"
+                else "permgrouplab_nearby_devices",
                 null,
                 null
             )
@@ -74,19 +82,11 @@ object BluetoothUtil {
         activity: Activity,
         requestPermissionLauncher: ActivityResultLauncher<Array<String>>
     ): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
-        val permissions = arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN)
         val missingPermissions =
             permissions.any { activity.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
 
-        val showRationale =
-            activity.shouldShowRequestPermissionRationale(Manifest.permission.BLUETOOTH_CONNECT)
-
         return if (missingPermissions) {
-            if (showRationale)
-                showRationaleDialog(activity) { dialog: DialogInterface?, which: Int -> requestPermissionLauncher.launch(permissions) }
-            else
-                requestPermissionLauncher.launch(permissions)
+            requestPermissionLauncher.launch(permissions)
             false
         } else {
             true
@@ -94,12 +94,9 @@ object BluetoothUtil {
     }
 
     fun onPermissionsResult(activity: Activity, granted: Map<String, Boolean>, cb: KFunction0<Unit>) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-        val showRationale =
-            activity.shouldShowRequestPermissionRationale(Manifest.permission.BLUETOOTH_CONNECT)
         if (!granted.containsValue(false)) {
             cb()
-        } else if (showRationale) {
+        } else if (activity.shouldShowRequestPermissionRationale(permissions[0])) {
             showRationaleDialog(activity) { dialog: DialogInterface?, which: Int -> cb() }
         } else {
             showSettingsDialog(activity)
