@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="50mm"
+   height="50mm"
+   viewBox="0 0 50 50"
+   version="1.1"
+   id="svg25370"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="yellow-heart-button.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview25372"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.7247722"
+     inkscape:cx="137.40945"
+     inkscape:cy="76.821741"
+     inkscape:window-width="1920"
+     inkscape:window-height="1015"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs25367" />
+  <g
+     inkscape:label="Laag 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="path19791"
+       style="fill:#e8c437;fill-opacity:1;stroke:#e8c437;stroke-width:9;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 33.082374,10.305158 c -3.94439,0.0452 -7.981826,2.49902 -8.543146,7.08432 l -0.0109,-0.3514 c -1.60917,-12.4582097 -28.0834201,-6.4366 -8.76846,15.07815 3.79664,4.01837 4.99087,4.90361 9.46971,8.02845 l -0.55707,-18.36115 0.63148,18.39991 c 4.120586,-2.84958 7.909976,-5.86933 11.804966,-11.15901 8.14481,-12.90837 2.17531,-18.79032 -4.02663,-18.71927 z" />
+    <path
+       id="path19791-3"
+       style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:3.57859;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       class="UnoptimicedTransforms"
+       d="m 181.15328,105.5889 c -0.0819,-10e-4 -0.16362,-5.1e-4 -0.24546,0.002 -3.16674,-0.0767 -6.42814,2.16767 -6.84299,5.42965 0,0.001 -1e-5,0.002 0,0.004 -0.0182,-0.006 -0.0363,-0.0125 -0.0543,-0.0191 -0.0126,-0.18437 -0.0276,-0.36824 -0.0465,-0.5519 -0.41608,-2.74394 -3.0692,-4.67933 -5.76347,-4.71186 -2.93087,-0.20782 -6.06741,1.68768 -6.63009,4.69481 -0.6549,3.45942 1.13238,6.789 3.04322,9.53998 2.57384,3.59961 5.82756,6.68973 9.50123,9.15087 0.68643,0.21379 0.41113,-0.78247 0.38509,0.26303 3.90151,-2.61479 7.55209,-5.7789 10.08259,-9.77357 1.70826,-2.94607 3.29057,-6.44866 2.36316,-9.91309 -0.69234,-2.54537 -3.25205,-4.08059 -5.79241,-4.11396 z"
+       sodipodi:nodetypes="sccccccccccccss"
+       transform="translate(-149.3753,-92.603269)" />
+  </g>
+</svg>
