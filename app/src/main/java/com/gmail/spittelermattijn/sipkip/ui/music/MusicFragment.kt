@@ -141,7 +141,7 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
      */
     private fun connect() {
         try {
-            Toast.makeText(context, "Trying to connect...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.toast_trying_to_connect, Toast.LENGTH_SHORT).show()
             connected = Connected.Pending
             val socket = SerialSocket(requireActivity().applicationContext, bluetoothDevice!!)
             service!!.connect(socket)
@@ -208,12 +208,12 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
      * SerialListener
      */
     override fun onSerialConnect() {
-        Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, R.string.toast_connected, Toast.LENGTH_SHORT).show()
         connected = Connected.True
     }
 
     override fun onSerialConnectError(e: Exception?) {
-        Toast.makeText(context, "Connection failed: " + e?.message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, getString(R.string.toast_connection_failed, e?.message), Toast.LENGTH_SHORT).show()
         disconnect()
     }
 
@@ -226,7 +226,7 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
     }
 
     override fun onSerialIoError(e: Exception?) {
-        Toast.makeText(context, "Connection lost: " + e?.message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, getString(R.string.toast_connection_lost, e?.message), Toast.LENGTH_SHORT).show()
         disconnect()
     }
 }

@@ -30,4 +30,9 @@
     <string name="bluetooth_permission_missing">Bluetooth permission missing</string>
     <string name="waiting_for_device">Waiting for SipKip…</string>
     <string name="menu_bt_settings">Bluetooth settings</string>
+    <string name="toast_trying_to_connect">Trying to connect…</string>
+    <string name="toast_connected">Connected</string>
+    <string name="toast_connection_lost">Connection lost: %1$s</string>
+    <string name="toast_connection_failed">Connection failed: %1$s</string>
+    <string name="toast_discovery_started">Discovery of bluetooth devices (re)started</string>
 </resources>

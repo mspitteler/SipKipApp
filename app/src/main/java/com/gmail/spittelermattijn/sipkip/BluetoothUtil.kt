@@ -42,36 +42,38 @@ object BluetoothUtil {
      */
     private fun showRationaleDialog(activity: Activity, listener: DialogInterface.OnClickListener) {
         val builder = AlertDialog.Builder(activity)
-        builder.setTitle(activity.getString(R.string.bluetooth_permission_title))
-        builder.setMessage(activity.getString(R.string.bluetooth_permission_grant))
-        builder.setNegativeButton("Cancel", null)
-        builder.setPositiveButton("Continue", listener)
+        builder.setTitle(R.string.bluetooth_permission_title)
+        builder.setMessage(R.string.bluetooth_permission_grant)
+        builder.setNegativeButton(android.R.string.cancel, null)
+        builder.setPositiveButton(android.R.string.ok, listener)
         builder.show()
     }
 
     private fun showSettingsDialog(activity: Activity) {
         @SuppressLint("DiscouragedApi") val s = activity.resources.getString(
             activity.resources.getIdentifier(
-                "@android:string/" + if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) "permgrouplab_location"
-                else "permgrouplab_nearby_devices",
+                "@android:string/${
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) "permgrouplab_location"
+                    else "permgrouplab_nearby_devices"
+                }",
                 null,
                 null
             )
         )
         val builder = AlertDialog.Builder(activity)
         builder.setTitle(activity.getString(R.string.bluetooth_permission_title))
-        builder.setMessage(
-            String.format(
-                activity.getString(R.string.bluetooth_permission_denied),
-                s
-            )
+        builder.setMessage(activity.getString(R.string.bluetooth_permission_denied, s))
+        builder.setNegativeButton(android.R.string.cancel, null)
+        @SuppressLint("DiscouragedApi") val id = activity.resources.getIdentifier(
+            "@android:string/global_action_settings",
+            null,
+            null
         )
-        builder.setNegativeButton("Cancel", null)
-        builder.setPositiveButton("Settings") { dialog: DialogInterface?, which: Int ->
+        builder.setPositiveButton(id) { dialog: DialogInterface?, which: Int ->
             activity.startActivity(
                 Intent(
                     Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.parse("package:" + BuildConfig.APPLICATION_ID)
+                    Uri.parse("package:${BuildConfig.APPLICATION_ID}")
                 )
             )
         }

@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity() {
                     bluetoothDevice = bluetoothAdapter.getRemoteDevice(device.address)
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED ->
-                    Toast.makeText(context, "Discovery of bluetooth devices (re)started", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.toast_discovery_started, Toast.LENGTH_SHORT).show()
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED ->
                     if (!foundDevice)
                         bluetoothAdapter.startDiscovery()

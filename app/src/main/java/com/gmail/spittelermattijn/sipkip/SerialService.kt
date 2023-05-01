@@ -162,7 +162,7 @@ class SerialService : Service(), SerialListener {
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(getColor(R.color.white))
             .setContentTitle(resources.getString(R.string.app_name))
-            .setContentText(socket?.let{ "Connected to " + it.name } ?: "Background Service" )
+            .setContentText(socket?.let{ "Connected to ${it.name}" } ?: "Background Service" )
             .setContentIntent(restartPendingIntent)
             .setOngoing(true)
             .addAction(
