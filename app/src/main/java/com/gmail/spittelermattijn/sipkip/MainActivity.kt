@@ -2,9 +2,7 @@ package com.gmail.spittelermattijn.sipkip
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
+import android.bluetooth.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +10,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -60,7 +59,9 @@ class MainActivity : AppCompatActivity() {
 
         // Register for broadcasts when a device is discovered.
         val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-        filter.also { it.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED) }.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
+        filter.also { it.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED) }
+            .also { it.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED) }.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
+
         registerReceiver(receiver, filter)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -163,6 +164,13 @@ class MainActivity : AppCompatActivity() {
 
     // Create a BroadcastReceiver for ACTION_FOUND.
     private val receiver = object : BroadcastReceiver() {
+        private var foundDevice = false
+
+        inline fun <reified T : Parcelable> Intent.parcelable(key: String): T? = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelableExtra(key, T::class.java)
+            else -> @Suppress("Deprecation") getParcelableExtra(key) as? T
+        }
+
         @SuppressLint("MissingPermission")
         override fun onReceive(context: Context, intent: Intent) {
             bluetoothDevice?.run { return }
@@ -170,21 +178,24 @@ class MainActivity : AppCompatActivity() {
                 BluetoothDevice.ACTION_FOUND -> {
                     // Discovery has found a device. Get the BluetoothDevice
                     // object and its info from the Intent.
-                    val device: BluetoothDevice? =
-                        when {
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
-                            else -> @Suppress("Deprecation") intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                        }
+                    val device: BluetoothDevice? = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
                     val deviceName = device?.name
                     if (deviceName == Constants.BLUETOOTH_DEVICE_NAME) {
-                        bluetoothDevice = device
+                        // Bond the device via GATT, since BluetoothDevice::createBond doesn't seem to work.
+                        device.connectGatt(context, false, object: BluetoothGattCallback() { })
+                        foundDevice = true
                         if (bluetoothAdapter.isDiscovering)
                             bluetoothAdapter.cancelDiscovery()
                     }
                 }
+                BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                    bluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
+                }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED ->
                     Toast.makeText(context, "Discovery of bluetooth devices (re)started", Toast.LENGTH_SHORT).show()
-                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> bluetoothAdapter.startDiscovery()
+                BluetoothAdapter.ACTION_DISCOVERY_FINISHED ->
+                    if (!foundDevice)
+                        bluetoothAdapter.startDiscovery()
             }
         }
     }
