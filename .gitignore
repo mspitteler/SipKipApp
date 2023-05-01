@@ -14,3 +14,7 @@
 .cxx
 local.properties
 /.idea
+/base.apk
+/base.apk.cache
+/base.apk.jadx
+token
