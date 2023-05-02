@@ -1,6 +1,5 @@
 package com.gmail.spittelermattijn.sipkip
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -9,7 +8,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -49,12 +47,19 @@ class FindDeviceActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
+        val settingsActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            BluetoothUtil.onSettingsActivityResult(this)
+            refresh()
+        }
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
         requestBluetoothPermissionLauncherForRefresh = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { granted: Map<String, Boolean>? ->
-            BluetoothUtil.onPermissionsResult(this, granted!!, this::refresh)
+            BluetoothUtil.onPermissionsResult(this, granted!!, this::refresh, settingsActivityResultLauncher)
         }
 
         // Register for broadcasts when a device is discovered.
@@ -123,11 +128,12 @@ class FindDeviceActivity : AppCompatActivity() {
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDestroy() {
         // Don't forget to unregister the ACTION_FOUND receiver.
         unregisterReceiver(receiver)
 
-        if (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+        if (BluetoothUtil.permissionsGranted(this) &&
             bluetoothAdapter.isDiscovering)
             bluetoothAdapter.cancelDiscovery()
         super.onDestroy()
