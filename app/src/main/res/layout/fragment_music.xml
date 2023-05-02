@@ -8,25 +8,6 @@
         android:id="@+id/recyclerview_transform"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
         app:layoutManager="LinearLayoutManager"
         tools:context=".ui.music.MusicFragment" />
-    <LinearLayout
-        android:id="@+id/loading_panel"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <ProgressBar
-            android:layout_width="match_parent"
-            android:layout_height="256dp"
-            android:indeterminate="true" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="48dp"
-            android:text="@string/waiting_for_device" />
-    </LinearLayout>
 </RelativeLayout>

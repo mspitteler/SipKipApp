@@ -35,4 +35,6 @@
     <string name="toast_connection_lost">Connection lost: %1$s</string>
     <string name="toast_connection_failed">Connection failed: %1$s</string>
     <string name="toast_discovery_started">Discovery of bluetooth devices (re)started</string>
+    <string name="toolbar_find_device">Find Device</string>
+    <string name="menu_find_device">Find Device</string>
 </resources>

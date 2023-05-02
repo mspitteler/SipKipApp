@@ -1,10 +1,11 @@
 package com.gmail.spittelermattijn.sipkip.ui.learn
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 
-class LearnViewModel : ViewModel() {
+class LearnViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _text = MutableLiveData<String>().apply {
         value = "This is learn Fragment"

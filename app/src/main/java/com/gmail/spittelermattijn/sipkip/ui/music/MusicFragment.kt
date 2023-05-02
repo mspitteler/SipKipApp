@@ -129,11 +129,6 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
     private fun bluetoothDeviceFound() {
         if (service == null)
             requireActivity().startService(Intent(activity, SerialService::class.java))
-
-        val recyclerView = binding.recyclerviewTransform
-        val loadingView = binding.loadingPanel
-        recyclerView.visibility = View.VISIBLE
-        loadingView.visibility = View.GONE
     }
 
     /*

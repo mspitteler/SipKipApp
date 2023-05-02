@@ -6,10 +6,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:showIn="@layout/app_bar_main">
+    tools:showIn="@layout/app_bar_find_device">
 
     <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/nav_host_fragment_content_main"
+        android:id="@+id/nav_host_fragment_content_find_device"
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -17,12 +17,5 @@
         android:layout_marginRight="@dimen/fragment_horizontal_margin"
         android:layout_weight="1"
         app:defaultNavHost="true"
-        app:navGraph="@navigation/mobile_navigation_main" />
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_nav_view"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_gravity="bottom"
-        app:menu="@menu/bottom_navigation" />
+        app:navGraph="@navigation/mobile_navigation_find_device" />
 </LinearLayout>
