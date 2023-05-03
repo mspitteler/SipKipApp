@@ -166,6 +166,20 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
             R.drawable.ic_yellow_heart_button,
             R.drawable.ic_red_triangle_button,
             R.drawable.ic_blue_square_button,
+            R.drawable.ic_beak_switch,
+            R.drawable.ic_purple_star_button,
+            R.drawable.ic_yellow_heart_button,
+            R.drawable.ic_red_triangle_button,
+            R.drawable.ic_blue_square_button,
+            R.drawable.ic_beak_switch,
+            R.drawable.ic_purple_star_button,
+            R.drawable.ic_yellow_heart_button,
+            R.drawable.ic_red_triangle_button,
+            R.drawable.ic_blue_square_button,
+            R.drawable.ic_beak_switch,
+            R.drawable.ic_purple_star_button,
+            R.drawable.ic_yellow_heart_button,
+            R.drawable.ic_red_triangle_button,
         )
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TransformViewHolder {
