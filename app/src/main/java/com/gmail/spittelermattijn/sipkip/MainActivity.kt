@@ -98,4 +98,9 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
+
+    fun onSerialError() {
+        startActivity(Intent(this, FindDeviceActivity::class.java))
+        finish()
+    }
 }

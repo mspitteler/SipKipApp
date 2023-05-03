@@ -32,6 +32,8 @@ import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
  * and shows items using GridLayoutManager in a large screen.
  */
 class MusicFragment : Fragment(), ServiceConnection, SerialListener {
+    private lateinit var musicViewModel: MusicViewModel
+
     private var _binding: FragmentMusicBinding? = null
     private val args by navArgs<MusicFragmentArgs>()
     private var connected = Connected.False
@@ -50,7 +52,7 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val musicViewModel = ViewModelProvider(this)[MusicViewModel::class.java]
+        musicViewModel = ViewModelProvider(this)[MusicViewModel::class.java]
         _binding = FragmentMusicBinding.inflate(inflater, container, false)
         val root = binding.root
 
@@ -107,6 +109,7 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     override fun onServiceConnected(name: ComponentName, binder: IBinder) {
         service = (binder as SerialBinder).service
         service!!.attach(this)
+        musicViewModel.writeCallback = service!!::write
         if (initialStart && isResumed) {
             initialStart = false
             requireActivity().runOnUiThread(this::connect)
@@ -132,6 +135,7 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     }
 
     private fun disconnect() {
+        musicViewModel.writeCallback = null
         connected = Connected.False
         service!!.disconnect()
     }
@@ -196,18 +200,22 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     override fun onSerialConnectError(e: Exception?) {
         Toast.makeText(context, getString(R.string.toast_connection_failed, e?.message), Toast.LENGTH_SHORT).show()
         disconnect()
+        (activity as? MainActivity)?.onSerialError()
     }
 
     override fun onSerialRead(data: ByteArray?) {
-        //TODO("Not yet implemented")
+        val datas = ArrayDeque<ByteArray?>()
+        datas.add(data)
+        musicViewModel.onSerialRead(datas)
     }
 
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
-        //TODO("Not yet implemented")
+        musicViewModel.onSerialRead(datas)
     }
 
     override fun onSerialIoError(e: Exception?) {
         Toast.makeText(context, getString(R.string.toast_connection_lost, e?.message), Toast.LENGTH_SHORT).show()
         disconnect()
+        (activity as? MainActivity)?.onSerialError()
     }
 }

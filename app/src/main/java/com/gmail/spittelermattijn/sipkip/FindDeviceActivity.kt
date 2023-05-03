@@ -24,14 +24,11 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityFindDeviceBinding
 import com.google.android.material.navigation.NavigationView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class FindDeviceActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityFindDeviceBinding
-    private val coroutineScope = CoroutineScope(SupervisorJob())
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private val bondedBluetoothDevices: ArrayList<BluetoothDevice?> = ArrayList()
