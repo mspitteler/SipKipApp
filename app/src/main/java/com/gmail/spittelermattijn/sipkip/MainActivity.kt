@@ -1,5 +1,6 @@
 package com.gmail.spittelermattijn.sipkip
 
+import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
@@ -19,9 +20,12 @@ import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+    private lateinit var bluetoothDevice: BluetoothDevice
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        bluetoothDevice = intent.parcelable("android.bluetooth.BluetoothDevice")
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

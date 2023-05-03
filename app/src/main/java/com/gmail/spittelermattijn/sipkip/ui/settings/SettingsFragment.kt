@@ -1,16 +1,15 @@
 package com.gmail.spittelermattijn.sipkip.ui.settings
 
-import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentSettingsBinding
-import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 
-class SettingsFragment : FragmentBase() {
+class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
 
@@ -39,9 +38,5 @@ class SettingsFragment : FragmentBase() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    override fun onBluetoothDeviceFound(device: BluetoothDevice) {
-
     }
 }

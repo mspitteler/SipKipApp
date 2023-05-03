@@ -14,18 +14,15 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.gmail.spittelermattijn.sipkip.R
-import com.gmail.spittelermattijn.sipkip.SerialListener
-import com.gmail.spittelermattijn.sipkip.SerialService
+import com.gmail.spittelermattijn.sipkip.*
 import com.gmail.spittelermattijn.sipkip.SerialService.SerialBinder
-import com.gmail.spittelermattijn.sipkip.SerialSocket
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentMusicBinding
 import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
-import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 
 
 /**
@@ -34,10 +31,9 @@ import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
  * the [RecyclerView] using LinearLayoutManager in a small screen
  * and shows items using GridLayoutManager in a large screen.
  */
-class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
+class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     private var _binding: FragmentMusicBinding? = null
-    private var bluetoothDevice: BluetoothDevice? = null
-    private var onCreateViewCalled = false
+    private lateinit var bluetoothDevice: BluetoothDevice
     private var connected = Connected.False
     private var initialStart = true
     private var service: SerialService? = null
@@ -50,7 +46,12 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        requireActivity().bindService(Intent(activity, SerialService::class.java), this, 0)
+        requireActivity().bindService(Intent(activity, SerialService::class.java), this, Context.BIND_AUTO_CREATE)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        bluetoothDevice = requireActivity().intent.parcelable("android.bluetooth.BluetoothDevice")
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -61,17 +62,19 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
         val recyclerView = binding.recyclerviewTransform
         val adapter = TransformAdapter()
         recyclerView.adapter = adapter
-        bluetoothDevice?.run { bluetoothDeviceFound() }
         musicViewModel.texts.observe(viewLifecycleOwner) { adapter.submitList(it) }
 
-        onCreateViewCalled = true
         return root
     }
 
     override fun onStart() {
         super.onStart()
+        if (service != null)
+            service!!.attach(this)
         // prevents service destroy on unbind from recreated activity caused by orientation change
-        service?.run { attach(this@MusicFragment) }
+        else
+            requireActivity().startService(Intent(activity, SerialService::class.java))
+
     }
 
     override fun onResume() {
@@ -92,7 +95,6 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        onCreateViewCalled = false
     }
 
     override fun onDestroy() {
@@ -120,17 +122,6 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
         service = null
     }
 
-    override fun onBluetoothDeviceFound(device: BluetoothDevice) {
-        bluetoothDevice = device
-        if (onCreateViewCalled)
-            bluetoothDeviceFound()
-    }
-
-    private fun bluetoothDeviceFound() {
-        if (service == null)
-            requireActivity().startService(Intent(activity, SerialService::class.java))
-    }
-
     /*
      * Serial + UI
      */
@@ -138,7 +129,7 @@ class MusicFragment : FragmentBase(), ServiceConnection, SerialListener {
         try {
             Toast.makeText(context, R.string.toast_trying_to_connect, Toast.LENGTH_SHORT).show()
             connected = Connected.Pending
-            val socket = SerialSocket(requireActivity().applicationContext, bluetoothDevice!!)
+            val socket = SerialSocket(requireActivity().applicationContext, bluetoothDevice)
             service!!.connect(socket)
         } catch (e: Exception) {
             onSerialConnectError(e)

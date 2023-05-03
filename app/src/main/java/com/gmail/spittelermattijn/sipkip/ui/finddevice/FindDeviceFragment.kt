@@ -7,11 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentFindDeviceBinding
-import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 
-class FindDeviceFragment : FragmentBase() {
+class FindDeviceFragment : Fragment() {
 
     private var _binding: FragmentFindDeviceBinding? = null
 
@@ -45,9 +45,5 @@ class FindDeviceFragment : FragmentBase() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    override fun onBluetoothDeviceFound(device: BluetoothDevice) {
-
     }
 }

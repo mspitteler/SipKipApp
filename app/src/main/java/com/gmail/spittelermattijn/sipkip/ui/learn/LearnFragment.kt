@@ -1,16 +1,15 @@
 package com.gmail.spittelermattijn.sipkip.ui.learn
 
-import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentLearnBinding
-import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 
-class LearnFragment : FragmentBase() {
+class LearnFragment : Fragment() {
 
     private var _binding: FragmentLearnBinding? = null
 
@@ -39,9 +38,5 @@ class LearnFragment : FragmentBase() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    override fun onBluetoothDeviceFound(device: BluetoothDevice) {
-
     }
 }

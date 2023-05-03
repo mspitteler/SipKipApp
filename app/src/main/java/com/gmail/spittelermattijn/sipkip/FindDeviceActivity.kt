@@ -8,9 +8,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import android.os.Bundle
-import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -62,7 +60,9 @@ class FindDeviceActivity : AppCompatActivity() {
         set(device) {
             field = device
             field?.let { dev ->
-                val intent = Intent(this, MainActivity::class.java).also { it.putExtra("BluetoothDevice", dev) }
+                val intent = Intent(this, MainActivity::class.java).also {
+                    it.putExtra("android.bluetooth.BluetoothDevice", dev)
+                }
                 startActivity(intent)
                 finish()
             }
@@ -186,11 +186,6 @@ class FindDeviceActivity : AppCompatActivity() {
     // Create a BroadcastReceiver for ACTION_FOUND, ACTION_BOND_STATE_CHANGED, ACTION_DISCOVERY_STARTED and ACTION_DISCOVERY_FINISHED.
     private val receiver = object : BroadcastReceiver() {
         private var foundDevice = false
-
-        inline fun <reified T : Parcelable> Intent.parcelable(key: String): T = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelableExtra(key, T::class.java)!!
-            else -> @Suppress("Deprecation") (getParcelableExtra(key) as T?)!!
-        }
 
         @SuppressLint("MissingPermission")
         override fun onReceive(context: Context, intent: Intent) {
