@@ -15,17 +15,15 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
-    private lateinit var bluetoothDevice: BluetoothDevice
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        bluetoothDevice = intent.parcelable("android.bluetooth.BluetoothDevice")
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -40,6 +38,11 @@ class MainActivity : AppCompatActivity() {
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
         navHostFragment.view?.visibility = View.GONE
         val navController = navHostFragment.navController
+        // Do this programmatically, since we want to pass arguments.
+        navController.setGraph(
+            R.navigation.mobile_navigation_main,
+            bundleOf("bluetoothDevice" to intent.parcelable("android.bluetooth.BluetoothDevice") as BluetoothDevice)
+        )
 
         binding.navView?.let {
             appBarConfiguration = AppBarConfiguration(

@@ -1,6 +1,5 @@
 package com.gmail.spittelermattijn.sipkip.ui.music
 
-import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -16,6 +15,7 @@ import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -33,7 +33,7 @@ import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
  */
 class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     private var _binding: FragmentMusicBinding? = null
-    private lateinit var bluetoothDevice: BluetoothDevice
+    private val args by navArgs<MusicFragmentArgs>()
     private var connected = Connected.False
     private var initialStart = true
     private var service: SerialService? = null
@@ -47,11 +47,6 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         requireActivity().bindService(Intent(activity, SerialService::class.java), this, Context.BIND_AUTO_CREATE)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        bluetoothDevice = requireActivity().intent.parcelable("android.bluetooth.BluetoothDevice")
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -129,7 +124,7 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
         try {
             Toast.makeText(context, R.string.toast_trying_to_connect, Toast.LENGTH_SHORT).show()
             connected = Connected.Pending
-            val socket = SerialSocket(requireActivity().applicationContext, bluetoothDevice)
+            val socket = SerialSocket(requireActivity().applicationContext, args.bluetoothDevice)
             service!!.connect(socket)
         } catch (e: Exception) {
             onSerialConnectError(e)
