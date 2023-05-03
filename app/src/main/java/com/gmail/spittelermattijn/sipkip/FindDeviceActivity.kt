@@ -26,20 +26,43 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityFindDeviceBinding
 import com.google.android.material.navigation.NavigationView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class FindDeviceActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityFindDeviceBinding
+    private val coroutineScope = CoroutineScope(SupervisorJob())
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private val bondedBluetoothDevices: ArrayList<BluetoothDevice?> = ArrayList()
     private lateinit var requestBluetoothPermissionLauncherForRefresh: ActivityResultLauncher<Array<String>>
     private var hasPermissions = false
+    private var bondedBluetoothDevice: BluetoothDevice? = null
+        @SuppressLint("MissingPermission")
+        set(device) {
+            field = device
+            // Check if the device is in range.
+            field?.let {
+                val socket = it.createRfcommSocketToServiceRecord(SerialSocket.BLUETOOTH_SPP)
+                coroutineScope.launch {
+                    try {
+                        socket.connect()
+                        socket.close()
+                        bluetoothDevice = bondedBluetoothDevice
+                    } catch (e: Exception) {
+                        // Recursively call this setter.
+                        bondedBluetoothDevice = bondedBluetoothDevice
+                    }
+                }
+            }
+        }
     private var bluetoothDevice: BluetoothDevice? = null
         set(device) {
             field = device
-            field?.let {
-                val intent = Intent(this, MainActivity::class.java)
+            field?.let { dev ->
+                val intent = Intent(this, MainActivity::class.java).also { it.putExtra("BluetoothDevice", dev) }
                 startActivity(intent)
                 finish()
             }
@@ -143,20 +166,24 @@ class FindDeviceActivity : AppCompatActivity() {
     private fun refresh() {
         bondedBluetoothDevices.clear()
         hasPermissions = BluetoothUtil.hasPermissions(this, requestBluetoothPermissionLauncherForRefresh)
+        // The code in this if statement should only be executed once, no matter what the user does while granting permissions.
         if (hasPermissions) {
             for (device in bluetoothAdapter.bondedDevices)
                 if (device.type != BluetoothDevice.DEVICE_TYPE_LE) bondedBluetoothDevices.add(device)
             bondedBluetoothDevices.sortWith{ a: BluetoothDevice?, b: BluetoothDevice? -> BluetoothUtil.compareTo(a!!, b!!) }
+            bondedBluetoothDevice = bondedBluetoothDevices.find { device -> device?.name == Constants.BLUETOOTH_DEVICE_NAME }
 
-            // Start scan if it hasn't been started yet.
-            if (bluetoothAdapter.isDiscovering)
-                bluetoothAdapter.cancelDiscovery()
-            bluetoothAdapter.startDiscovery()
+            // If we haven't connected before, try to discover it.
+            if (bondedBluetoothDevice == null) {
+                // Start scan if it hasn't been started yet.
+                if (bluetoothAdapter.isDiscovering)
+                    bluetoothAdapter.cancelDiscovery()
+                bluetoothAdapter.startDiscovery()
+            }
         }
-        bluetoothDevice = bondedBluetoothDevices.find { device -> device?.name == Constants.BLUETOOTH_DEVICE_NAME }
     }
 
-    // Create a BroadcastReceiver for ACTION_FOUND.
+    // Create a BroadcastReceiver for ACTION_FOUND, ACTION_BOND_STATE_CHANGED, ACTION_DISCOVERY_STARTED and ACTION_DISCOVERY_FINISHED.
     private val receiver = object : BroadcastReceiver() {
         private var foundDevice = false
 
@@ -173,8 +200,7 @@ class FindDeviceActivity : AppCompatActivity() {
                     // Discovery has found a device. Get the BluetoothDevice
                     // object and its info from the Intent.
                     val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
-                    val deviceName = device.name
-                    if (deviceName == Constants.BLUETOOTH_DEVICE_NAME) {
+                    if (device.name == Constants.BLUETOOTH_DEVICE_NAME) {
                         device.createBond()
                         foundDevice = true
                         if (bluetoothAdapter.isDiscovering)
@@ -183,7 +209,8 @@ class FindDeviceActivity : AppCompatActivity() {
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
                     val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
-                    bluetoothDevice = bluetoothAdapter.getRemoteDevice(device.address)
+                    if (device.name == Constants.BLUETOOTH_DEVICE_NAME)
+                        bluetoothDevice = bluetoothAdapter.getRemoteDevice(device.address)
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED ->
                     Toast.makeText(context, R.string.toast_discovery_started, Toast.LENGTH_SHORT).show()
