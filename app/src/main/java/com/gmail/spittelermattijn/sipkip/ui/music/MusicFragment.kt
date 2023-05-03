@@ -109,7 +109,6 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     override fun onServiceConnected(name: ComponentName, binder: IBinder) {
         service = (binder as SerialBinder).service
         service!!.attach(this)
-        musicViewModel.writeCallback = service!!::write
         if (initialStart && isResumed) {
             initialStart = false
             requireActivity().runOnUiThread(this::connect)
@@ -195,6 +194,7 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     override fun onSerialConnect() {
         Toast.makeText(context, R.string.toast_connected, Toast.LENGTH_SHORT).show()
         connected = Connected.True
+        musicViewModel.writeCallback = service!!::write
     }
 
     override fun onSerialConnectError(e: Exception?) {

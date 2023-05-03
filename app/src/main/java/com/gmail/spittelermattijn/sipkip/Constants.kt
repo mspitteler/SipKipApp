@@ -9,4 +9,5 @@ internal object Constants {
     // values have to be unique within each app
     const val NOTIFY_MANAGER_START_FOREGROUND_SERVICE = 1001
     const val BLUETOOTH_DEVICE_NAME = "SipKip"
+    const val BLUETOOTH_GET_DEVICE_FILES_DELAY = 5
 }
