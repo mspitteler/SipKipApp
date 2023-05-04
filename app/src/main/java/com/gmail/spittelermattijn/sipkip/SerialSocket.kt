@@ -8,26 +8,26 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import java.io.IOException
-import java.security.InvalidParameterException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.util.UUID
-import java.util.concurrent.Executors
 
-class SerialSocket(context: Context, device: BluetoothDevice) : Runnable {
+class SerialSocket(context: Context, device: BluetoothDevice) {
     private val disconnectBroadcastReceiver: BroadcastReceiver
     private val context: Context
     private var listener: SerialListener? = null
     private val device: BluetoothDevice
     private var socket: BluetoothSocket? = null
     private var connected = false
+    private var job: Job? = null
 
     init {
-        if (context is Activity) throw InvalidParameterException("expected non UI context")
+        if (context is Activity) throw java.security.InvalidParameterException("expected non UI context")
         this.context = context
         this.device = device
         disconnectBroadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                listener?.onSerialIoError(IOException("background disconnect"))
+                listener?.onSerialIoError(java.io.IOException("background disconnect"))
                 disconnect() // disconnect now, else would be queued until UI re-attached
             }
         }
@@ -46,10 +46,13 @@ class SerialSocket(context: Context, device: BluetoothDevice) : Runnable {
             disconnectBroadcastReceiver,
             IntentFilter(Constants.INTENT_ACTION_DISCONNECT)
         )
-        Executors.newSingleThreadExecutor().submit(this)
+        job?.cancel()
+        job = coroutineScope.launch { run() }
     }
 
     fun disconnect() {
+        job?.cancel()
+        job = null
         listener = null // ignore remaining data and errors
         // connected = false; // run loop will reset connected
         try {
@@ -63,14 +66,14 @@ class SerialSocket(context: Context, device: BluetoothDevice) : Runnable {
         }
     }
 
-    @Throws(IOException::class)
+    @Throws(java.io.IOException::class)
     fun write(data: ByteArray?) {
-        if (!connected) throw IOException("not connected")
+        if (!connected) throw java.io.IOException("not connected")
         socket!!.outputStream.write(data)
     }
 
     @SuppressLint("MissingPermission")
-    override fun run() { // connect & read
+    private fun run() { // connect & read
         try {
             socket = device.createRfcommSocketToServiceRecord(BLUETOOTH_SPP)
             socket!!.connect()
@@ -105,6 +108,6 @@ class SerialSocket(context: Context, device: BluetoothDevice) : Runnable {
     }
 
     companion object {
-        val BLUETOOTH_SPP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+        val BLUETOOTH_SPP: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
     }
 }

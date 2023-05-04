@@ -7,7 +7,6 @@ import android.app.Service
 import android.content.Intent
 import android.os.*
 import androidx.core.app.NotificationCompat
-import java.io.IOException
 
 /**
  * create notification and queue serial data while activity is not in the foreground
@@ -84,7 +83,7 @@ class SerialService : Service(), SerialListener {
     /**
      * Api
      */
-    @Throws(IOException::class)
+    @Throws(java.io.IOException::class)
     fun connect(socket: SerialSocket) {
         socket.connect(this)
         this.socket = socket
@@ -98,9 +97,9 @@ class SerialService : Service(), SerialListener {
         socket = null
     }
 
-    @Throws(IOException::class)
+    @Throws(java.io.IOException::class)
     fun write(data: ByteArray?) {
-        if (!connected) throw IOException("not connected")
+        if (!connected) throw java.io.IOException("not connected")
         socket!!.write(data)
     }
 
