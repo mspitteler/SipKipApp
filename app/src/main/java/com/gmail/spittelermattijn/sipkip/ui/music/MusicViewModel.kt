@@ -29,22 +29,30 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     val texts: LiveData<List<String>> = _texts
 
-    private fun updateExploredPathList(callback: KFunction1<ByteArray, Unit>, path: String) {
-        val results = blockingCommand(callback, "ls /littlefs/$path")
+    private fun ArrayList<File>.update(callback: KFunction1<ByteArray, Unit>, path: String) {
+        val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
+        val results = blockingCommand(callback, "ls /littlefs/$pathSlash")
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
             for (line in result.split('\n').filter { !(it matches """\d+@${Constants.BLUETOOTH_DEVICE_NAME} > \s*""".toRegex()) }) {
-                val newPath = "$path$line"
+                val newPath = "$pathSlash$line"
                 // If line has trailing slash
                 if (line matches """[^/]+/\s*""".toRegex()) { // Directory
-                    updateExploredPathList(callback, newPath)
-                    exploredPaths.add(File(FileType.Directory, newPath))
                     println("Adding directory: $newPath")
+                    add(File(FileType.Directory, newPath))
+                    update(callback, newPath)
                 } else if (line.isNotEmpty()) { // Regular file
-                    exploredPaths.add(File(FileType.File, newPath))
                     println("Adding file: $newPath")
+                    add(File(FileType.File, newPath))
                 }
             }
+        }
+    }
+
+    private fun ArrayList<File>.clear(path: String) {
+        for (i in indices.reversed()) {
+            if (this[i].name matches """$path${if (path.last() == '/') "" else "/"}.*""".toRegex())
+                removeAt(i)
         }
     }
 
@@ -80,10 +88,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // TODO Make this a service or something
     init {
         coroutineScope.launch { while (true) {
-            exploredPaths.clear()
-            writeCallback?.let { updateExploredPathList(it, "/") }
+            exploredPaths.clear("/music")
+            writeCallback?.let { exploredPaths.update(it, "/music") }
             updateLiveData()
             delay(Constants.BLUETOOTH_GET_DEVICE_FILES_DELAY.toDuration(DurationUnit.SECONDS))
         }}
