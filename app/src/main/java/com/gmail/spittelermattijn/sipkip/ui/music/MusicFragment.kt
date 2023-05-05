@@ -140,47 +140,14 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
     }
 
     class TransformAdapter :
-        ListAdapter<String, TransformViewHolder>(object : DiffUtil.ItemCallback<String>() {
+        ListAdapter<MusicViewModel.Item, TransformViewHolder>(object : DiffUtil.ItemCallback<MusicViewModel.Item>() {
 
-            override fun areItemsTheSame(oldItem: String, newItem: String): Boolean =
+            override fun areItemsTheSame(oldItem: MusicViewModel.Item, newItem: MusicViewModel.Item): Boolean =
                 oldItem == newItem
 
-            override fun areContentsTheSame(oldItem: String, newItem: String): Boolean =
+            override fun areContentsTheSame(oldItem: MusicViewModel.Item, newItem: MusicViewModel.Item): Boolean =
                 oldItem == newItem
         }) {
-
-        private val drawables = listOf(
-            R.drawable.ic_blue_square_button,
-            R.drawable.ic_beak_switch,
-            R.drawable.ic_purple_star_button,
-            R.drawable.ic_yellow_heart_button,
-            R.drawable.ic_red_triangle_button,
-            R.drawable.ic_blue_square_button,
-            R.drawable.ic_beak_switch,
-            R.drawable.ic_purple_star_button,
-            R.drawable.ic_yellow_heart_button,
-            R.drawable.ic_red_triangle_button,
-            R.drawable.ic_blue_square_button,
-            R.drawable.ic_beak_switch,
-            R.drawable.ic_purple_star_button,
-            R.drawable.ic_yellow_heart_button,
-            R.drawable.ic_red_triangle_button,
-            R.drawable.ic_blue_square_button,
-            R.drawable.ic_beak_switch,
-            R.drawable.ic_purple_star_button,
-            R.drawable.ic_yellow_heart_button,
-            R.drawable.ic_red_triangle_button,
-            R.drawable.ic_blue_square_button,
-            R.drawable.ic_beak_switch,
-            R.drawable.ic_purple_star_button,
-            R.drawable.ic_yellow_heart_button,
-            R.drawable.ic_red_triangle_button,
-            R.drawable.ic_blue_square_button,
-            R.drawable.ic_beak_switch,
-            R.drawable.ic_purple_star_button,
-            R.drawable.ic_yellow_heart_button,
-            R.drawable.ic_red_triangle_button,
-        )
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TransformViewHolder {
             val binding = ItemMusicBinding.inflate(LayoutInflater.from(parent.context))
@@ -188,9 +155,9 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
         }
 
         override fun onBindViewHolder(holder: TransformViewHolder, position: Int) {
-            holder.textView.text = getItem(position)
+            holder.textView.text = getItem(position).path
             holder.imageView.setImageDrawable(
-                ResourcesCompat.getDrawable(holder.imageView.resources, drawables[position], null)
+                ResourcesCompat.getDrawable(holder.imageView.resources, getItem(position).drawable, null)
             )
         }
     }

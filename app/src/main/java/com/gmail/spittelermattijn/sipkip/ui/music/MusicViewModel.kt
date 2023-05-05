@@ -1,10 +1,12 @@
 package com.gmail.spittelermattijn.sipkip.ui.music
 
 import android.app.Application
+import androidx.annotation.DrawableRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.gmail.spittelermattijn.sipkip.Constants
+import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -21,13 +23,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private data class File(val type: FileType, val name: String)
     private val exploredPaths: ArrayList<File> = ArrayList()
 
-    private val _texts = MutableLiveData<List<String>>().apply {
-        value = (1..30).mapIndexed { _, i ->
-            "This is item # $i"
-        }
-    }
+    data class Item(@DrawableRes val drawable: Int, val path: String)
 
-    val texts: LiveData<List<String>> = _texts
+    private val _texts: MutableLiveData<List<Item>> = MutableLiveData()
+    val texts: LiveData<List<Item>> = _texts
 
     private fun ArrayList<File>.update(callback: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
@@ -57,10 +56,28 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun updateLiveData() {
-        if (exploredPaths.isEmpty())
-            return
-        _texts.postValue(exploredPaths.indices.mapIndexed { _, i ->
-            exploredPaths[i].name
+        val paths = exploredPaths.filter { it.type == FileType.File } // Only display regular files.
+        val opusPaths: ArrayList<String> = ArrayList()
+        for (path in paths) {
+            if (path.name matches """.+\.opus""".toRegex(RegexOption.IGNORE_CASE)) {
+                // Do this substring dance, because then we preserve the case insensitivity of the Opus file extension.
+                val pathWithoutExtension = path.name.substring(0 until path.name.length - ".opus".length)
+                if (paths.any { it.name == "$pathWithoutExtension.opus_packets" })
+                    opusPaths.add(pathWithoutExtension)
+            }
+        }
+
+        _texts.postValue(opusPaths.indices.mapIndexed { _, i ->
+            val path = opusPaths[i].removePrefix("/music")
+            val firstDirectory = path.split('/').first { it.isNotEmpty() }
+            Item(when (firstDirectory) {
+                "star_clip" -> R.drawable.ic_purple_star_button
+                "triangle_clip" -> R.drawable.ic_red_triangle_button
+                "square_clip" -> R.drawable.ic_blue_square_button
+                "heart_clip" -> R.drawable.ic_yellow_heart_button
+                "beak_switch" -> R.drawable.ic_beak_switch
+                else -> R.drawable.ic_unknown
+            }, path.removePrefix("/${firstDirectory}/"))
         })
     }
 
