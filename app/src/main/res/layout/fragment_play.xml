@@ -7,7 +7,7 @@
     tools:context=".ui.play.PlayFragment">
 
     <TextView
-        android:id="@+id/text_reflow"
+        android:id="@+id/text_play"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"

@@ -28,7 +28,7 @@ class PlayFragment : Fragment() {
         _binding = FragmentPlayBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val textView: TextView = binding.textReflow
+        val textView: TextView = binding.textPlay
         playViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }

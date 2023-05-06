@@ -56,8 +56,8 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
         _binding = FragmentMusicBinding.inflate(inflater, container, false)
         val root = binding.root
 
-        val recyclerView = binding.recyclerviewTransform
-        val adapter = TransformAdapter()
+        val recyclerView = binding.recyclerviewMusic
+        val adapter = MusicAdapter()
         recyclerView.adapter = adapter
         musicViewModel.texts.observe(viewLifecycleOwner) { adapter.submitList(it) }
 
@@ -139,8 +139,8 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
         service!!.disconnect()
     }
 
-    class TransformAdapter :
-        ListAdapter<MusicViewModel.Item, TransformViewHolder>(object : DiffUtil.ItemCallback<MusicViewModel.Item>() {
+    class MusicAdapter :
+        ListAdapter<MusicViewModel.Item, MusicViewHolder>(object : DiffUtil.ItemCallback<MusicViewModel.Item>() {
 
             override fun areItemsTheSame(oldItem: MusicViewModel.Item, newItem: MusicViewModel.Item): Boolean =
                 oldItem == newItem
@@ -149,12 +149,12 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
                 oldItem == newItem
         }) {
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TransformViewHolder {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
             val binding = ItemMusicBinding.inflate(LayoutInflater.from(parent.context))
-            return TransformViewHolder(binding)
+            return MusicViewHolder(binding)
         }
 
-        override fun onBindViewHolder(holder: TransformViewHolder, position: Int) {
+        override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
             holder.textView.text = getItem(position).path
             holder.imageView.setImageDrawable(
                 ResourcesCompat.getDrawable(holder.imageView.resources, getItem(position).drawable, null)
@@ -162,11 +162,11 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
         }
     }
 
-    class TransformViewHolder(binding: ItemMusicBinding) :
+    class MusicViewHolder(binding: ItemMusicBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        val imageView: ImageView = binding.imageViewItemTransform
-        val textView: TextView = binding.textViewItemTransform
+        val imageView: ImageView = binding.imageViewItemMusic
+        val textView: TextView = binding.textViewItemMusic
     }
 
     /*

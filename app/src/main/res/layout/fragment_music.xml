@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerview_transform"
+        android:id="@+id/recyclerview_music"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layoutManager="LinearLayoutManager"
+        app:layoutManager="GridLayoutManager"
         tools:context=".ui.music.MusicFragment" />
 </RelativeLayout>
