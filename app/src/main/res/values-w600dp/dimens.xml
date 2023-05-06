@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <dimen name="fragment_horizontal_margin">48dp</dimen>
-    <dimen name="fab_margin">48dp</dimen>
+    <dimen name="fragment_horizontal_margin">32dp</dimen>
+    <dimen name="fab_margin">32dp</dimen>
     <dimen name="item_music_image_length">142dp</dimen>
     <dimen name="item_music_card_view_length" tools:ignore="MissingDefaultResource">32dp</dimen>
     <dimen name="item_music_text_view_margin_start" tools:ignore="MissingDefaultResource">16dp</dimen>
