@@ -12,6 +12,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -151,7 +153,9 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
             val binding = ItemMusicBinding.inflate(LayoutInflater.from(parent.context))
-            return MusicViewHolder(binding)
+            return MusicViewHolder(binding).apply { cardView.setOnClickListener {
+                Toast.makeText(it.context, "Pressed ${(it.grandParent as RecyclerView).getChildLayoutPosition(it.parent as ConstraintLayout)}", Toast.LENGTH_SHORT).show()
+            }}
         }
 
         override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
@@ -167,6 +171,7 @@ class MusicFragment : Fragment(), ServiceConnection, SerialListener {
 
         val imageView: ImageView = binding.imageViewItemMusic
         val textView: TextView = binding.textViewItemMusic
+        val cardView: CardView = binding.cardViewItemMusic
     }
 
     /*
