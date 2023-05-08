@@ -1,11 +1,15 @@
 package com.gmail.spittelermattijn.sipkip
 
 import android.bluetooth.BluetoothDevice
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.navigation.NavigationView
 import androidx.navigation.findNavController
@@ -17,10 +21,15 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
+import kotlinx.coroutines.launch
+import java.io.OutputStream
+import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+    private lateinit var filePickerActivityResultLauncher: ActivityResultLauncher<String>
+    private var getContentFd: ParcelFileDescriptor? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,10 +38,22 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.appBarMain.toolbar)
 
-        binding.appBarMain.fab?.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
+        filePickerActivityResultLauncher = registerForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
+            if (uri != null) {
+                getContentFd = contentResolver.openFileDescriptor(uri, "r")
+                val transcoder = OpusTranscoder(getContentFd!!)
+                transcoder.onFinishedListener = ::onTranscoderFinished
+                coroutineScope.launch { transcoder.start(openFileOutput(UUID.randomUUID().toString(), Context.MODE_PRIVATE)) }
+            } else {
+                binding.appBarMain.fab?.let {
+                    Snackbar.make(it, getString(R.string.snackbar_no_file_picked), Snackbar.LENGTH_LONG).show()
+                }
+            }
         }
+
+        binding.appBarMain.fab?.setOnClickListener { view -> filePickerActivityResultLauncher.launch("audio/*") }
 
         val navHostFragment =
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
@@ -102,5 +123,14 @@ class MainActivity : AppCompatActivity() {
     fun onSerialError() {
         startActivity(Intent(this, FindDeviceActivity::class.java))
         finish()
+    }
+
+    private fun onTranscoderFinished(output: OutputStream) {
+        binding.appBarMain.fab?.let {
+            Snackbar.make(it, "Done!", Snackbar.LENGTH_LONG).show()
+        }
+        getContentFd?.close()
+        getContentFd = null
+        output.close()
     }
 }

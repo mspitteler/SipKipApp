@@ -1,0 +1,3 @@
+[submodule "libopus/src/main/cpp/opus"]
+	path = libopus/src/main/cpp/opus
+	url = https://github.com/xiph/opus/

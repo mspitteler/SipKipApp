@@ -37,4 +37,5 @@
     <string name="toast_discovery_started">Discovery of bluetooth devices (re)started</string>
     <string name="toolbar_find_device">Find Device</string>
     <string name="menu_find_device">Find Device</string>
+    <string name="snackbar_no_file_picked">No file was picked</string>
 </resources>
