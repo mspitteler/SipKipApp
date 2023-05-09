@@ -12,18 +12,22 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.ceil
-import kotlin.reflect.KFunction1
+import kotlin.reflect.KFunction2
 
 class OpusTranscoder(input: ParcelFileDescriptor) {
     // Use a dedicated Opus encoder, since MediaCodec only supports Opus encoding from Android 10 onwards.
     private val encoder = Opus()
     private val extractor = MediaExtractor()
     private var decoder: MediaCodec? = null
+    private var resampleBuffer: ByteBuffer? = null
 
-    var onFinishedListener: KFunction1<OutputStream, Unit>? = null
+    var onFinishedListener: KFunction2<OutputStream, OutputStream, Unit>? = null
 
     init {
-        encoder.open(ENCODER_CHANNEL_COUNT, ENCODER_SAMPLE_RATE, ENCODER_BIT_RATE)
+        val encoderSampleRate = ENCODER_SAMPLE_RATE
+        val encoderChannelCount = ENCODER_CHANNEL_COUNT
+        val encoderBitRate = ENCODER_BIT_RATE
+        encoder.open(encoderChannelCount, encoderSampleRate, encoderBitRate)
 
         extractor.setDataSource(input.fileDescriptor)
         var sampleRate = 0
@@ -75,7 +79,10 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
         }
     }
 
-    fun start(output: OutputStream) {
+    fun start(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
+        val encoderSampleRate = ENCODER_SAMPLE_RATE
+        val encoderChannelCount = ENCODER_CHANNEL_COUNT
+        val encoderFrameSize = ENCODER_FRAME_SIZE
         decoder?.setCallback(object : MediaCodec.Callback() {
             override fun onInputBufferAvailable(mc: MediaCodec, inputBufferId: Int) {
                 val inputBuffer = mc.getInputBuffer(inputBufferId)!!
@@ -98,10 +105,10 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
 
                 var eos = false
 
-                if (outputBufferInfo.flags != MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
-                    var resampleBuffer: ByteBuffer? = null
-                    var size = outputBuffer!!.remaining()
+                if (resampleBuffer == null)
+                    resampleBuffer = ByteBuffer.allocate(outputBuffer!!.capacity())
 
+                if (outputBufferInfo.flags != MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
                     val rate = bufferFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
                     val encoding = if (bufferFormat.containsKey(MediaFormat.KEY_PCM_ENCODING))
                         bufferFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
@@ -109,38 +116,52 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
                         ENCODER_PCM_ENCODING
 
                     val count = bufferFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-                    if (rate != ENCODER_SAMPLE_RATE || encoding != ENCODER_PCM_ENCODING || count != ENCODER_CHANNEL_COUNT) {
-                        resampleBuffer = ByteBuffer.allocate(outputBuffer.capacity())
+                    if (rate != encoderSampleRate || encoding != ENCODER_PCM_ENCODING || count != encoderChannelCount) {
                         // Resample here
                         Resampler.resample(
                             AudioFormat.Builder().setSampleRate(rate)
                                 .setEncoding(encoding)
                                 .setChannelMask(if (count == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO)
                                 .build(),
-                            outputBuffer,
-                            AudioFormat.Builder().setSampleRate(ENCODER_SAMPLE_RATE)
+                            outputBuffer!!,
+                            AudioFormat.Builder().setSampleRate(encoderSampleRate)
                                 .setEncoding(ENCODER_PCM_ENCODING)
-                                .setChannelMask(if (ENCODER_CHANNEL_COUNT == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO)
+                                .setChannelMask(if (encoderChannelCount == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO)
                                 .build(),
-                            resampleBuffer
+                            resampleBuffer!!
                         )
-                        // Put buffer into read mode.
-                        resampleBuffer.flip()
-                        size = resampleBuffer.remaining()
+                    } else {
+                        resampleBuffer!!.put(outputBuffer!!)
                     }
-
-                    if (resampleBuffer == null)
-                        resampleBuffer = outputBuffer
-
-                    ByteArray(size).let { resampleBuffer.get(it); output.write(it) }
                 } else {
                     eos = true
+                }
+
+                if (resampleBuffer!!.position() >= encoderFrameSize * encoderChannelCount * 2 || eos) {
+                    // Put buffer into read mode.
+                    resampleBuffer!!.flip()
+                    var size = resampleBuffer!!.remaining()
+                    while (size >= encoderFrameSize * encoderChannelCount * 2) {
+                        ByteArray(encoderFrameSize * encoderChannelCount * 2).let {
+                            resampleBuffer!!.get(it)
+                            val shortArray = ShortArray(it.size / 2)
+                            ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shortArray)
+                            val result = encoder.encode(shortArray, 0, shortArray.size)!!
+                            opusOutput.write(result)
+                            // Little endian.
+                            opusPacketsOutput.write(byteArrayOf((result.size and 0xFF).toByte(), (result.size shl 8).toByte()))
+                        }
+                        size -= encoderFrameSize * encoderChannelCount * 2
+                    }
+                    // Make available for writing again.
+                    resampleBuffer!!.compact()
                 }
 
                 mc.releaseOutputBuffer(outputBufferId, false)
 
                 if (eos) {
-                    onFinishedListener!!(output)
+                    resampleBuffer = null
+                    onFinishedListener!!(opusOutput, opusPacketsOutput)
                     encoder.close()
                     extractor.release()
                     coroutineScope.launch {
@@ -162,10 +183,12 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     }
 
     private companion object {
+        // The frame size is hardcoded for this sample code but it doesn't have to be.
         const val ENCODER_SAMPLE_RATE = 48000
         const val ENCODER_CHANNEL_COUNT = 1
         const val ENCODER_PCM_ENCODING = AudioFormat.ENCODING_PCM_16BIT
         const val ENCODER_BIT_RATE = 16000
+        const val ENCODER_FRAME_SIZE = ENCODER_SAMPLE_RATE * 60 / 1000 // 60 ms frames
     }
 
     private class Resampler constructor(private val resampleRatio: Float, channelCount: Int) {

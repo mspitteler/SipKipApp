@@ -1,29 +1,33 @@
 package com.gmail.spittelermattijn.sipkip
 
 import android.bluetooth.BluetoothDevice
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
+import android.provider.OpenableColumns
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.navigation.NavigationView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
+import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import java.io.OutputStream
 import java.util.UUID
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -43,9 +47,12 @@ class MainActivity : AppCompatActivity() {
         ) { uri ->
             if (uri != null) {
                 getContentFd = contentResolver.openFileDescriptor(uri, "r")
+                val getContentFileName = contentResolver.queryName(uri)
+                val opusOutput = openFileOutput("$getContentFileName.opus", Context.MODE_PRIVATE)
+                val opusPacketsOutput = openFileOutput("$getContentFileName.opus_packets", Context.MODE_PRIVATE)
                 val transcoder = OpusTranscoder(getContentFd!!)
                 transcoder.onFinishedListener = ::onTranscoderFinished
-                coroutineScope.launch { transcoder.start(openFileOutput(UUID.randomUUID().toString(), Context.MODE_PRIVATE)) }
+                transcoder.start(opusOutput, opusPacketsOutput)
             } else {
                 binding.appBarMain.fab?.let {
                     Snackbar.make(it, getString(R.string.snackbar_no_file_picked), Snackbar.LENGTH_LONG).show()
@@ -125,12 +132,22 @@ class MainActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun onTranscoderFinished(output: OutputStream) {
+    private fun onTranscoderFinished(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
         binding.appBarMain.fab?.let {
             Snackbar.make(it, "Done!", Snackbar.LENGTH_LONG).show()
         }
         getContentFd?.close()
         getContentFd = null
-        output.close()
+        opusOutput.close()
+        opusPacketsOutput.close()
+    }
+
+    private fun ContentResolver.queryName(uri: Uri): String {
+        val returnCursor = query(uri, null, null, null, null)!!
+        val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        returnCursor.moveToFirst()
+        val name = returnCursor.getString(nameIndex)
+        returnCursor.close()
+        return name
     }
 }
