@@ -10,10 +10,12 @@ import com.gmail.spittelermattijn.sipkip.opusjni.Opus
 import kotlinx.coroutines.launch
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlin.math.ceil
 import kotlin.reflect.KFunction1
 
 class OpusTranscoder(input: ParcelFileDescriptor) {
+    // Use a dedicated Opus encoder, since MediaCodec only supports Opus encoding from Android 10 onwards.
     private val encoder = Opus()
     private val extractor = MediaExtractor()
     private var decoder: MediaCodec? = null
@@ -96,10 +98,10 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
 
                 var eos = false
 
-                var resampleBuffer: ByteBuffer? = null
-                var size = 0
-
                 if (outputBufferInfo.flags != MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
+                    var resampleBuffer: ByteBuffer? = null
+                    var size = outputBuffer!!.remaining()
+
                     val rate = bufferFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
                     val encoding = if (bufferFormat.containsKey(MediaFormat.KEY_PCM_ENCODING))
                         bufferFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
@@ -108,9 +110,9 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
 
                     val count = bufferFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
                     if (rate != ENCODER_SAMPLE_RATE || encoding != ENCODER_PCM_ENCODING || count != ENCODER_CHANNEL_COUNT) {
-                        resampleBuffer = ByteBuffer.wrap(ByteArray(outputBuffer!!.capacity()))
+                        resampleBuffer = ByteBuffer.allocate(outputBuffer.capacity())
                         // Resample here
-                        size = Resampler.resample(
+                        Resampler.resample(
                             AudioFormat.Builder().setSampleRate(rate)
                                 .setEncoding(encoding)
                                 .setChannelMask(if (count == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO)
@@ -122,19 +124,18 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
                                 .build(),
                             resampleBuffer
                         )
+                        // Put buffer into read mode.
+                        resampleBuffer.flip()
+                        size = resampleBuffer.remaining()
                     }
+
+                    if (resampleBuffer == null)
+                        resampleBuffer = outputBuffer
+
+                    ByteArray(size).let { resampleBuffer.get(it); output.write(it) }
                 } else {
                     eos = true
                 }
-                if (resampleBuffer == null) {
-                    resampleBuffer = outputBuffer
-                    size = outputBufferInfo.size
-                }
-
-                if (resampleBuffer!!.hasArray())
-                    output.write(resampleBuffer.array(), 0, size)
-                else
-                    ByteArray(size).let { resampleBuffer.get(it); output.write(it) }
 
                 mc.releaseOutputBuffer(outputBufferId, false)
 
@@ -202,23 +203,23 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
         companion object {
             private const val EPSILON = 0.001f
 
-            fun resample(inputFormat: AudioFormat, input: ByteBuffer, outputFormat: AudioFormat, output: ByteBuffer): Int {
+            fun resample(inputFormat: AudioFormat, input: ByteBuffer, outputFormat: AudioFormat, output: ByteBuffer) {
+                input.order(ByteOrder.LITTLE_ENDIAN)
+                output.order(ByteOrder.LITTLE_ENDIAN)
+
                 val resampler = Resampler(inputFormat.sampleRate, outputFormat.sampleRate, inputFormat.channelCount)
                 val readFrame = inputFormat.newFrameReader()
                 val writeFrame = outputFormat.newFrameWriter()
-                var frames = 0
 
                 try {
                     while (true) {
                         resampler.process(input.readFrame()) {
                             output.writeFrame(it)
-                            frames++
                         }
                     }
                 } catch (e: RuntimeException) {
                     // BufferUnderflowException / BufferOverflowException
                 }
-                return frames * outputFormat.channelCount
             }
 
             private fun AudioFormat.newFrameReader(): ByteBuffer.() -> FloatArray {
