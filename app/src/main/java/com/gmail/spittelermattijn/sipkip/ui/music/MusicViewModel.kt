@@ -2,12 +2,12 @@ package com.gmail.spittelermattijn.sipkip.ui.music
 
 import android.app.Application
 import androidx.annotation.DrawableRes
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.gmail.spittelermattijn.sipkip.Constants
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
+import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.locks.ReentrantLock
@@ -15,9 +15,9 @@ import kotlin.reflect.KFunction1
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-class MusicViewModel(application: Application) : AndroidViewModel(application) {
+class MusicViewModel(application: Application) : ViewModelBase(application) {
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
-    var writeCallback: KFunction1<ByteArray, Unit>? = null
+    override var serialWriteCallback: KFunction1<ByteArray, Unit>? = null
 
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
@@ -81,7 +81,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         })
     }
 
-    fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
+    override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
         commandExecutionLock.lock()
         commandExecutionResults.addAll(datas!!)
         if (commandFirstRead) {
@@ -109,7 +109,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     init {
         coroutineScope.launch { while (true) {
             exploredPaths.clear("/music")
-            writeCallback?.let { exploredPaths.update(it, "/music") }
+            serialWriteCallback?.let { exploredPaths.update(it, "/music") }
             updateLiveData()
             delay(Constants.BLUETOOTH_GET_DEVICE_FILES_DELAY.toDuration(DurationUnit.SECONDS))
         }}

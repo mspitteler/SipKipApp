@@ -1,17 +1,23 @@
 package com.gmail.spittelermattijn.sipkip.ui.learn
 
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.navArgs
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentLearnBinding
+import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 
-class LearnFragment : Fragment() {
+class LearnFragment : FragmentBase() {
+    override lateinit var viewModel: LearnViewModel
+    private lateinit var bluetoothDevice: BluetoothDevice
 
     private var _binding: FragmentLearnBinding? = null
+
+    override val args by navArgs<LearnFragmentArgs>()
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -22,14 +28,14 @@ class LearnFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val learnViewModel =
-            ViewModelProvider(this)[LearnViewModel::class.java]
+        bluetoothDevice = args.bluetoothDevice
+        viewModel = ViewModelProvider(this)[LearnViewModel::class.java]
 
         _binding = FragmentLearnBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         val textView: TextView = binding.textLearn
-        learnViewModel.text.observe(viewLifecycleOwner) {
+        viewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }
         return root

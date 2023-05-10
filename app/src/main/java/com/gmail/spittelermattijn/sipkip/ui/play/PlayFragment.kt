@@ -1,17 +1,23 @@
 package com.gmail.spittelermattijn.sipkip.ui.play
 
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.navArgs
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentPlayBinding
+import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 
-class PlayFragment : Fragment() {
+class PlayFragment : FragmentBase() {
+    override lateinit var viewModel: PlayViewModel
+    private lateinit var bluetoothDevice: BluetoothDevice
 
     private var _binding: FragmentPlayBinding? = null
+
+    override val args by navArgs<PlayFragmentArgs>()
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -22,14 +28,15 @@ class PlayFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val playViewModel =
+        bluetoothDevice = args.bluetoothDevice
+        viewModel =
             ViewModelProvider(this)[PlayViewModel::class.java]
 
         _binding = FragmentPlayBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         val textView: TextView = binding.textPlay
-        playViewModel.text.observe(viewLifecycleOwner) {
+        viewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }
         return root

@@ -42,7 +42,12 @@
         android:id="@+id/nav_settings"
         android:name="com.gmail.spittelermattijn.sipkip.ui.settings.SettingsFragment"
         android:label="@string/menu_settings"
-        tools:layout="@layout/fragment_settings" />
+        tools:layout="@layout/fragment_settings">
+
+        <argument
+            android:name="bluetoothDevice"
+            app:argType="android.bluetooth.BluetoothDevice" />
+    </fragment>
 
     <activity
         android:id="@+id/nav_bt_settings"

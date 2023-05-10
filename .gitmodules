@@ -1,3 +1,6 @@
 [submodule "libopus/src/main/cpp/opus"]
 	path = libopus/src/main/cpp/opus
 	url = https://github.com/xiph/opus/
+[submodule "app/libs/jermit"]
+	path = app/libs/jermit
+	url = https://gitlab.com/klamonte/jermit.git
