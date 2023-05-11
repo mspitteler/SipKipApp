@@ -2,18 +2,16 @@ package com.gmail.spittelermattijn.sipkip
 
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
-import android.provider.OpenableColumns
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,12 +25,23 @@ import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
 import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import jermit.protocol.SerialFileTransferSession
 import jermit.protocol.xmodem.XmodemSender
 import jermit.protocol.xmodem.XmodemSession
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.io.File
+import java.io.InputStream
 import java.io.OutputStream
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
 import kotlin.properties.Delegates
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
+import kotlin.reflect.KFunction0
 
 
 class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
@@ -49,6 +58,15 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private var initialStart = true
     private var isResumed by Delegates.notNull<Boolean>()
     private var service: SerialService? = null
+    private val serialQueue: BlockingQueue<Byte> = ArrayBlockingQueue(10000)
+    private var serialIsBlocking = false
+        set(isBlocking) {
+            field = isBlocking
+            if (field)
+                disableFragmentWriteCallback()
+            else
+                enableFragmentWriteCallback()
+        }
 
     private enum class Connected { False, Pending, True }
 
@@ -74,11 +92,12 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
                 val opusOutput = openFileOutput(opusFileName, Context.MODE_PRIVATE)
                 val opusPacketsOutput = openFileOutput(opusPacketsFileName, Context.MODE_PRIVATE)
                 val transcoder = OpusTranscoder(getContentFd!!)
+                transcoder.onStartedListener = ::onTranscoderStarted
                 transcoder.onFinishedListener = ::onTranscoderFinished
                 transcoder.start(opusOutput, opusPacketsOutput)
             } else {
                 binding.appBarMain.fab?.let {
-                    Snackbar.make(it, getString(R.string.snackbar_no_file_picked), Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(it, R.string.snackbar_no_file_picked, Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -197,8 +216,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     }
 
     private fun disconnect() {
-        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).
-            viewModel.serialWriteCallback = null
+        disableFragmentWriteCallback()
         connected = Connected.False
         service!!.disconnect()
     }
@@ -209,8 +227,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     override fun onSerialConnect() {
         Toast.makeText(this, R.string.toast_connected, Toast.LENGTH_SHORT).show()
         connected = Connected.True
-        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).
-            viewModel.serialWriteCallback = service!!::write
+        enableFragmentWriteCallback()
     }
 
     override fun onSerialConnectError(e: Exception?) {
@@ -220,15 +237,22 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     }
 
     override fun onSerialRead(data: ByteArray?) {
-        val datas = ArrayDeque<ByteArray?>()
-        datas.add(data)
-        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase)
-            .viewModel.onSerialRead(datas)
+        if (serialIsBlocking) {
+            data?.forEach { serialQueue.add(it) }
+        } else {
+            val datas = ArrayDeque<ByteArray?>()
+            datas.add(data)
+            (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).
+                viewModel.onSerialRead(datas)
+        }
     }
 
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
-        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).
-            viewModel.onSerialRead(datas)
+        if (serialIsBlocking)
+            datas?.forEach { it?.forEach { byte -> serialQueue.add(byte) } }
+        else
+            (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).
+                viewModel.onSerialRead(datas)
     }
 
     override fun onSerialIoError(e: Exception?) {
@@ -262,41 +286,133 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         finish()
     }
 
-    private fun onTranscoderFinished(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
+    private fun onTranscoderStarted() {
         binding.appBarMain.fab?.let {
-            Snackbar.make(it, "Done!", Snackbar.LENGTH_LONG).show()
+            val bar = Snackbar.make(it, R.string.snackbar_processing_file, Snackbar.LENGTH_INDEFINITE)
+            val snackView = bar.view as SnackbarLayout
+            val progressBar = LinearProgressIndicator(this)
+            progressBar.isIndeterminate = true
+            snackView.addView(progressBar)
+            bar.show()
         }
+    }
+
+    private fun onTranscoderFinished(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
         getContentFd?.close()
         getContentFd = null
         opusOutput.close()
         opusPacketsOutput.close()
 
+        startSerialUpload()
+    }
+
+    private fun startSerialUpload() {
+        val `1kThreshold` = DEFAULT_XMODEM_1K_THRESHOLD
+        val fileName = (if (opusFileName != null) {
+            val name = opusFileName; opusFileName = null; name
+        } else {
+            val name = opusPacketsFileName; opusPacketsFileName = null; name
+        }) ?: return
+        val filePath = "$filesDir/$fileName"
+
         // Allow CRC. This will automatically fallback to vanilla if the receiver initiates with NAK instead of 'C'.
         // We can't default to 1K because we can't guarantee that the receiver will know how to handle it.
 
         // Permit 1K.  This will fallback to vanilla if they use NAK.
-        val flavor = if (DEFAULT_XMODEM_BLOCK_SIZE >= 1024) XmodemSession.Flavor.X_1K else XmodemSession.Flavor.CRC
+        val flavor = if (File(filePath).length() >= `1kThreshold`) XmodemSession.Flavor.X_1K else XmodemSession.Flavor.CRC
         // Open only the first file and send it.
-        // Open only the first file and send it.
-        val sx = XmodemSender(flavor, null, null, opusFileName)
-        opusFileName = null
+        val sx = XmodemSender(flavor,
+            object: InputStream() {
+                override fun read() = serialQueue.take().toInt()
+                override fun available() = serialQueue.size
+            },
+            object : OutputStream() {
+                override fun write(b: ByteArray?) = service!!.write(b)
+                override fun write(b: Int) = write(ByteArray(1) { b.toByte() })
+                override fun write(b: ByteArray?, off: Int, len: Int) = write(b?.copyOfRange(off, off + len))
+            }, filePath
+        )
 
-        val session: SerialFileTransferSession = sx.session
+        setupSerialUpload(sx.session, fileName, ::startSerialUpload)
         val transferThread = Thread(sx)
-
-        opusPacketsFileName = null
+        transferThread.start()
     }
 
-    private fun ContentResolver.queryName(uri: Uri): String {
-        val returnCursor = query(uri, null, null, null, null)!!
-        val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-        returnCursor.moveToFirst()
-        val name = returnCursor.getString(nameIndex)
-        returnCursor.close()
-        return name
+    private fun setupSerialUpload(session: SerialFileTransferSession, fileName: String, cb: KFunction0<Unit>) {
+        var snackBar: Snackbar? = null
+        var progressBar: ProgressBar? = null
+        binding.appBarMain.fab?.let { runOnUiThread {
+            val bar = Snackbar.make(it, R.string.snackbar_upload_progress, Snackbar.LENGTH_INDEFINITE)
+            val snackView = bar.view as SnackbarLayout
+            progressBar = LinearProgressIndicator(this)
+            progressBar!!.isIndeterminate = false
+            progressBar!!.max = 100 // percent
+            snackView.addView(progressBar)
+            bar.show()
+            snackBar = bar
+        }}
+
+        coroutineScope.launch {
+            serialIsBlocking = true
+            delay(500.toDuration(DurationUnit.MILLISECONDS))
+            service!!.write("rm /littlefs/music/heart_clip/$fileName\n".toByteArray())
+            delay(500.toDuration(DurationUnit.MILLISECONDS))
+            service!!.write("rx /littlefs/music/heart_clip/$fileName\n".toByteArray())
+            serialQueue.clear()
+
+            // Emit messages as they are recorded.
+            var messageCount = 0
+            var done: Boolean
+            while (true) {
+                synchronized(session) {
+                    done = when (session.state) {
+                        SerialFileTransferSession.State.ABORT -> true
+                        SerialFileTransferSession.State.END -> {
+                            // Recursive call to upload the second file.
+                            cb()
+                            // All done, bail out.
+                            true
+                        }
+                        else -> false
+                    }
+                }
+                if (done)
+                    break
+                try {
+                    // Wait for a notification on the session.
+                    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+                    synchronized(session) { (session as Object).wait(100) }
+                } catch (e: InterruptedException) {
+                    // SQUASH
+                }
+                synchronized(session) {
+                    if (session.messageCount() > messageCount) {
+                        for (i in messageCount until session.messageCount()) {
+                            println(session.getMessage(i).message)
+                            messageCount++
+                        }
+                    }
+                    val percent = session.percentComplete.toInt()
+                    //session.cancelTransfer(false)
+                    runOnUiThread { progressBar?.progress = percent }
+                }
+            }
+            runOnUiThread { snackBar?.setText(session.lastMessage.message) }
+            delay(2.toDuration(DurationUnit.SECONDS))
+            snackBar?.dismiss()
+            serialIsBlocking = false
+        }
     }
 
-    private companion object {
-        const val DEFAULT_XMODEM_BLOCK_SIZE = 1024
+    private fun disableFragmentWriteCallback() {
+        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).viewModel.serialWriteCallback = null
+    }
+
+    private fun enableFragmentWriteCallback() {
+        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).viewModel.serialWriteCallback = service!!::write
+    }
+
+    companion object {
+        const val DEFAULT_XMODEM_1K_THRESHOLD = 8192
     }
 }

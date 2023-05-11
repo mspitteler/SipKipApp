@@ -1,8 +1,11 @@
 package com.gmail.spittelermattijn.sipkip
 
+import android.content.ContentResolver
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
+import android.provider.OpenableColumns
 import android.view.View
 import android.view.ViewParent
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +19,15 @@ val View.grandParent: ViewParent get() = parent.parent
 inline fun <reified T : Parcelable> Intent.parcelable(key: String): T = when {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelableExtra(key, T::class.java)!!
     else -> @Suppress("Deprecation") (getParcelableExtra(key) as T?)!!
+}
+
+fun ContentResolver.queryName(uri: Uri): String {
+    val returnCursor = query(uri, null, null, null, null)!!
+    val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+    returnCursor.moveToFirst()
+    val name = returnCursor.getString(nameIndex)
+    returnCursor.close()
+    return name
 }
 
 fun ByteBuffer.getByteToFloat(): Float = get().toFloat() / Byte.MAX_VALUE

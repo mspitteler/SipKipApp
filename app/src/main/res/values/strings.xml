@@ -38,4 +38,6 @@
     <string name="toolbar_find_device">Find Device</string>
     <string name="menu_find_device">Find Device</string>
     <string name="snackbar_no_file_picked">No file was picked</string>
+    <string name="snackbar_upload_progress">Upload progress</string>
+    <string name="snackbar_processing_file">Processing audio file</string>
 </resources>

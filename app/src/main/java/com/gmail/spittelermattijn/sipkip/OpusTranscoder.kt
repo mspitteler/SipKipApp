@@ -12,6 +12,7 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.ceil
+import kotlin.reflect.KFunction0
 import kotlin.reflect.KFunction2
 
 class OpusTranscoder(input: ParcelFileDescriptor) {
@@ -20,7 +21,9 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     private val extractor = MediaExtractor()
     private var decoder: MediaCodec? = null
     private var resampleBuffer: ByteBuffer? = null
+    private var sos = true
 
+    var onStartedListener: KFunction0<Unit>? = null
     var onFinishedListener: KFunction2<OutputStream, OutputStream, Unit>? = null
 
     init {
@@ -158,6 +161,11 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
                 }
 
                 mc.releaseOutputBuffer(outputBufferId, false)
+
+                if (sos) {
+                    onStartedListener!!()
+                    sos = false
+                }
 
                 if (eos) {
                     resampleBuffer = null
