@@ -344,14 +344,13 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         var snackBar: Snackbar? = null
         var progressBar: ProgressBar? = null
         binding.appBarMain.fab?.let { runOnUiThread {
-            val bar = Snackbar.make(it, R.string.snackbar_upload_progress, Snackbar.LENGTH_INDEFINITE)
-            val snackView = bar.view as SnackbarLayout
+            snackBar = Snackbar.make(it, R.string.snackbar_upload_progress, Snackbar.LENGTH_LONG)
+            val snackView = snackBar!!.view as SnackbarLayout
             progressBar = LinearProgressIndicator(this)
             progressBar!!.isIndeterminate = false
             progressBar!!.max = 100 // percent
             snackView.addView(progressBar)
-            bar.show()
-            snackBar = bar
+            snackBar!!.show()
         }}
 
         coroutineScope.launch {
@@ -400,12 +399,12 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
                     }
                     val percent = session.percentComplete.toInt()
                     //session.cancelTransfer(false)
+                    // Restart timeout.
+                    snackBar?.show()
                     runOnUiThread { progressBar?.progress = percent }
                 }
             }
             runOnUiThread { snackBar?.setText(session.lastMessage.message) }
-            delay(2.toDuration(DurationUnit.SECONDS))
-            snackBar?.dismiss()
         }
     }
 
