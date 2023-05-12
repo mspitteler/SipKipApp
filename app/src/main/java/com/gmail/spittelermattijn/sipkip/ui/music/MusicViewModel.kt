@@ -23,6 +23,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
     private val exploredPaths: ArrayList<File> = ArrayList()
+    private val promptRegex = """\d+@${Constants.BLUETOOTH_DEVICE_NAME} > \s*""".toRegex()
 
     data class Item(@DrawableRes val drawable: Int, val path: String)
 
@@ -34,7 +35,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         val results = blockingCommand(callback, "ls /littlefs/$pathSlash")
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
-            for (line in result.split('\n').filter { !(it matches """\d+@${Constants.BLUETOOTH_DEVICE_NAME} > \s*""".toRegex()) }) {
+            for (line in result.split('\n').filter { !(it matches promptRegex) }) {
                 val newPath = "$pathSlash$line"
                 // If line has trailing slash
                 if (line matches """[^/]+/\s*""".toRegex()) { // Directory
@@ -85,24 +86,15 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
         commandExecutionLock.lock()
         commandExecutionResults.addAll(datas!!)
-        if (commandFirstRead) {
-            commandFirstRead = false
-            commandExecutionLock.unlock()
+        val index = commandExecutionResultsReceivedIndex
 
-            coroutineScope.launch {
-                delay(500.toDuration(DurationUnit.MILLISECONDS))
-                with(commandExecutionLock) {
-                    lock()
-                    try {
-                        commandExecutionResultsReceived = true
-                        commandExecutionCondition.signal()
-                    } finally {
-                        unlock()
-                    }
-                }
-            }
-        } else {
-            commandExecutionLock.unlock()
+        if (datas.any { String(it!!).split('\n').last() matches promptRegex })
+            signalCommandExecutionResultsReceived(index)
+        commandExecutionLock.unlock()
+
+        coroutineScope.launch {
+            delay(Constants.BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
+            signalCommandExecutionResultsReceived(index)
         }
     }
 
@@ -120,9 +112,25 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         private val commandExecutionLock = ReentrantLock()
         private val commandExecutionCondition = commandExecutionLock.newCondition()
 
-        private var commandFirstRead = true
         private var commandExecutionResults: ArrayList<ByteArray?> = ArrayList()
-        private var commandExecutionResultsReceived = false
+        private var commandExecutionResultsReceived = BooleanArray(UByte.MAX_VALUE.toInt() + 1) { false }
+        private var commandExecutionResultsReceivedIndex = 0.toUByte()
+
+        private fun signalCommandExecutionResultsReceived(index: UByte) {
+            with(commandExecutionLock) {
+                lock()
+                if (!commandExecutionResultsReceived[index.toInt()]) {
+                    try {
+                        commandExecutionResultsReceived[index.toInt()] = true
+                        commandExecutionCondition.signal()
+                    } finally {
+                        unlock()
+                    }
+                } else {
+                    unlock()
+                }
+            }
+        }
 
         private fun write(callback: KFunction1<ByteArray, Unit>, data: ByteArray) {
             // We'll catch it later when the read in SerialService fails.
@@ -134,10 +142,9 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
             val results: ArrayList<ByteArray?>
             with(commandExecutionLock) {
                 lock()
-                commandFirstRead = true
                 try {
-                    commandExecutionResultsReceived = false
-                    while (!commandExecutionResultsReceived)
+                    commandExecutionResultsReceived[(++commandExecutionResultsReceivedIndex + 1.toUByte()).toUByte().toInt()] = false
+                    while (!commandExecutionResultsReceived[commandExecutionResultsReceivedIndex.toInt()])
                         commandExecutionCondition.await()
                 } finally {
                     results = ArrayList(commandExecutionResults)
