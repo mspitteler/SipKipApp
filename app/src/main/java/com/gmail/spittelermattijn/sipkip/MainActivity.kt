@@ -306,13 +306,14 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         startSerialUpload()
     }
 
-    private fun startSerialUpload() {
+    // Returns true if a new upload was started.
+    private fun startSerialUpload(): Boolean {
         val `1kThreshold` = DEFAULT_XMODEM_1K_THRESHOLD
         val fileName = (if (opusFileName != null) {
             val name = opusFileName; opusFileName = null; name
         } else {
             val name = opusPacketsFileName; opusPacketsFileName = null; name
-        }) ?: return
+        }) ?: return false
         val filePath = "$filesDir/$fileName"
 
         // Allow CRC. This will automatically fallback to vanilla if the receiver initiates with NAK instead of 'C'.
@@ -336,9 +337,10 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         setupSerialUpload(sx.session, fileName, ::startSerialUpload)
         val transferThread = Thread(sx)
         transferThread.start()
+        return true
     }
 
-    private fun setupSerialUpload(session: SerialFileTransferSession, fileName: String, cb: KFunction0<Unit>) {
+    private fun setupSerialUpload(session: SerialFileTransferSession, fileName: String, cb: KFunction0<Boolean>) {
         var snackBar: Snackbar? = null
         var progressBar: ProgressBar? = null
         binding.appBarMain.fab?.let { runOnUiThread {
@@ -366,10 +368,14 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             while (true) {
                 synchronized(session) {
                     done = when (session.state) {
-                        SerialFileTransferSession.State.ABORT -> true
+                        SerialFileTransferSession.State.ABORT -> {
+                            // Reset serial to normal mode.
+                            serialIsBlocking = false
+                            true
+                        }
                         SerialFileTransferSession.State.END -> {
-                            // Recursive call to upload the second file.
-                            cb()
+                            // Recursive call to upload the second file, also restore serial to normal mode if no new upload is started.
+                            serialIsBlocking = cb()
                             // All done, bail out.
                             true
                         }
@@ -400,7 +406,6 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             runOnUiThread { snackBar?.setText(session.lastMessage.message) }
             delay(2.toDuration(DurationUnit.SECONDS))
             snackBar?.dismiss()
-            serialIsBlocking = false
         }
     }
 
