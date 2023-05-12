@@ -232,7 +232,7 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
         }
 
         companion object {
-            private const val EPSILON = 0.001f
+            private const val EPSILON = 0.002f
 
             fun resample(inputFormat: AudioFormat, input: ByteBuffer, outputFormat: AudioFormat, output: ByteBuffer) {
                 input.order(ByteOrder.LITTLE_ENDIAN)
