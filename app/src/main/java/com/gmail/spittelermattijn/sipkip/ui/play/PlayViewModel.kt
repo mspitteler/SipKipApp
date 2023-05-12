@@ -7,6 +7,7 @@ import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
 import kotlin.reflect.KFunction1
 
 class PlayViewModel(application: Application) : ViewModelBase(application) {
+    override val littleFsPath = "/play"
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
     override var serialWriteCallback: KFunction1<ByteArray, Unit>? = null
 

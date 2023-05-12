@@ -8,4 +8,5 @@ abstract class ViewModelBase(application: Application) : AndroidViewModel(applic
     abstract fun onSerialRead(datas: ArrayDeque<ByteArray?>?)
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
     abstract var serialWriteCallback: KFunction1<ByteArray, Unit>?
+    open val littleFsPath: String? = null
 }

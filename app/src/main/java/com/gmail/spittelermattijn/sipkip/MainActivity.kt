@@ -50,6 +50,8 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private lateinit var filePickerActivityResultLauncher: ActivityResultLauncher<String>
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bluetoothDevice: BluetoothDevice
+    private val currentFragment: FragmentBase
+        get() = (navHostFragment.childFragmentManager.fragments[0] as FragmentBase)
     private var getContentFd: ParcelFileDescriptor? = null
     private var opusFileName: String? = null
     private var opusPacketsFileName: String? = null
@@ -62,10 +64,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private var serialIsBlocking = false
         set(isBlocking) {
             field = isBlocking
-            if (field)
-                disableFragmentWriteCallback()
-            else
-                enableFragmentWriteCallback()
+            currentFragment.viewModel.serialWriteCallback = if (field) null else service!!::write
         }
 
     private enum class Connected { False, Pending, True }
@@ -216,7 +215,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     }
 
     private fun disconnect() {
-        disableFragmentWriteCallback()
+        currentFragment.viewModel.serialWriteCallback = null
         connected = Connected.False
         service!!.disconnect()
     }
@@ -227,7 +226,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     override fun onSerialConnect() {
         Toast.makeText(this, R.string.toast_connected, Toast.LENGTH_SHORT).show()
         connected = Connected.True
-        enableFragmentWriteCallback()
+        currentFragment.viewModel.serialWriteCallback = service!!::write
     }
 
     override fun onSerialConnectError(e: Exception?) {
@@ -242,8 +241,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         } else {
             val datas = ArrayDeque<ByteArray?>()
             datas.add(data)
-            (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).
-                viewModel.onSerialRead(datas)
+            currentFragment.viewModel.onSerialRead(datas)
         }
     }
 
@@ -251,8 +249,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         if (serialIsBlocking)
             datas?.forEach { it?.forEach { byte -> serialQueue.add(byte) } }
         else
-            (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).
-                viewModel.onSerialRead(datas)
+            currentFragment.viewModel.onSerialRead(datas)
     }
 
     override fun onSerialIoError(e: Exception?) {
@@ -356,9 +353,9 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         coroutineScope.launch {
             serialIsBlocking = true
             delay(500.toDuration(DurationUnit.MILLISECONDS))
-            service!!.write("rm /littlefs/music/heart_clip/$fileName\n".toByteArray())
+            service!!.write("rm /littlefs/${currentFragment.viewModel.littleFsPath}/heart_clip/$fileName\n".toByteArray())
             delay(500.toDuration(DurationUnit.MILLISECONDS))
-            service!!.write("rx /littlefs/music/heart_clip/$fileName\n".toByteArray())
+            service!!.write("rx /littlefs/${currentFragment.viewModel.littleFsPath}/heart_clip/$fileName\n".toByteArray())
             serialQueue.clear()
 
             // Emit messages as they are recorded.
@@ -406,14 +403,6 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             }
             runOnUiThread { snackBar?.setText(session.lastMessage.message) }
         }
-    }
-
-    private fun disableFragmentWriteCallback() {
-        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).viewModel.serialWriteCallback = null
-    }
-
-    private fun enableFragmentWriteCallback() {
-        (navHostFragment.childFragmentManager.fragments[0] as FragmentBase).viewModel.serialWriteCallback = service!!::write
     }
 
     companion object {

@@ -16,6 +16,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class MusicViewModel(application: Application) : ViewModelBase(application) {
+    override val littleFsPath = "/music"
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
     override var serialWriteCallback: KFunction1<ByteArray, Unit>? = null
 
@@ -68,7 +69,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         }
 
         _texts.postValue(opusPaths.indices.mapIndexed { _, i ->
-            val path = opusPaths[i].removePrefix("/music")
+            val path = opusPaths[i].removePrefix(littleFsPath)
             val firstDirectory = path.split('/').first { it.isNotEmpty() }
             Item(when (firstDirectory) {
                 "star_clip" -> R.drawable.ic_purple_star_button
@@ -108,8 +109,8 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     // TODO Make this a service or something
     init {
         coroutineScope.launch { while (true) {
-            exploredPaths.clear("/music")
-            serialWriteCallback?.let { exploredPaths.update(it, "/music") }
+            exploredPaths.clear(littleFsPath)
+            serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }
             updateLiveData()
             delay(Constants.BLUETOOTH_GET_DEVICE_FILES_DELAY.toDuration(DurationUnit.SECONDS))
         }}
