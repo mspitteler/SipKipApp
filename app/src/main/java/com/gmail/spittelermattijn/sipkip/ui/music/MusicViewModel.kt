@@ -64,7 +64,8 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
             if (path.name matches """.+\.opus""".toRegex(RegexOption.IGNORE_CASE)) {
                 // Do this substring dance, because then we preserve the case insensitivity of the Opus file extension.
                 val pathWithoutExtension = path.name.substring(0 until path.name.length - ".opus".length)
-                if (paths.any { it.name == "$pathWithoutExtension.opus_packets" })
+                if (paths.any { it.name matches """.+\.opus_packets""".toRegex(RegexOption.IGNORE_CASE) &&
+                            it.name.substring(0 until it.name.length - ".opus_packets".length) == pathWithoutExtension })
                     opusPaths.add(pathWithoutExtension)
             }
         }
@@ -79,7 +80,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
                 "heart_clip" -> R.drawable.ic_yellow_heart_button
                 "beak_switch" -> R.drawable.ic_beak_switch
                 else -> R.drawable.ic_unknown
-            }, path.removePrefix("/${firstDirectory}/"))
+            }, path.removePrefix("/$firstDirectory/"))
         })
     }
 
@@ -88,7 +89,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         CommandUtil.commandExecutionResults.addAll(datas!!)
         val index = CommandUtil.commandExecutionResultsReceivedIndex
 
-        if (datas.any { String(it!!).split('\n').last() matches promptRegex })
+        if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
             CommandUtil.signalCommandExecutionResultsReceived(index)
         CommandUtil.commandExecutionLock.unlock()
 
