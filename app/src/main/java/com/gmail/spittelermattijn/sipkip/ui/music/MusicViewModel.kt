@@ -96,6 +96,15 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         }
     }
 
+    fun removeItem(fullPath: String) {
+        coroutineScope.launch {
+            serialWriteCallback?.let {
+                CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus")
+                CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus_packets")
+            }
+        }
+    }
+
     // TODO Make this a service or something
     init {
         coroutineScope.launch { while (true) {

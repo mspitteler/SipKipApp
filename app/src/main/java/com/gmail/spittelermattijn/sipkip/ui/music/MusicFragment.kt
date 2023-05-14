@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
+import androidx.fragment.app.findFragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DiffUtil
@@ -79,8 +80,19 @@ class MusicFragment : FragmentBase() {
 
                 // Registering popup with OnMenuItemClickListener
                 popup.setOnMenuItemClickListener { item ->
-                    Toast.makeText(it.context, "You clicked: ${item.title} of item: ${it.contentDescription}", Toast.LENGTH_SHORT).show()
-
+                    val fragment = it.findFragment<MusicFragment>()
+                    when (item.itemId) {
+                        R.id.option_rename -> {
+                            Toast.makeText(it.context, "Renaming file: ${it.contentDescription} to: ${it.contentDescription}", Toast.LENGTH_SHORT).show()
+                        }
+                        R.id.option_remove -> {
+                            Toast.makeText(it.context, "Removing file: ${it.contentDescription}", Toast.LENGTH_SHORT).show()
+                            fragment.viewModel.removeItem(it.contentDescription.toString())
+                        }
+                        R.id.option_change_first_directory -> {
+                            Toast.makeText(it.context, "Changing associated clip/switch of: ${it.contentDescription} to: ${it.contentDescription.split('/').filter { elem -> elem.isNotEmpty() }[1]}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                     true
                 }
 
