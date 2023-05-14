@@ -2,23 +2,24 @@ package com.gmail.spittelermattijn.sipkip.ui.music
 
 import android.bluetooth.BluetoothDevice
 import android.os.Bundle
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentMusicBinding
 import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
-import com.gmail.spittelermattijn.sipkip.grandParent
 import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
 
 
@@ -71,15 +72,30 @@ class MusicFragment : FragmentBase() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
             val binding = ItemMusicBinding.inflate(LayoutInflater.from(parent.context))
             return MusicViewHolder(binding).apply { cardView.setOnClickListener {
-                Toast.makeText(it.context, "Pressed ${(it.grandParent as RecyclerView).getChildLayoutPosition(it.parent as ConstraintLayout)}", Toast.LENGTH_SHORT).show()
+                val wrapper = ContextThemeWrapper(it.context, R.style.Theme_SipKip_PopupOverlay)
+                val popup = PopupMenu(wrapper, it)
+                // Inflating the Popup using xml file
+                popup.menuInflater.inflate(R.menu.item_music_options, popup.menu)
+
+                // Registering popup with OnMenuItemClickListener
+                popup.setOnMenuItemClickListener { item ->
+                    Toast.makeText(it.context, "You clicked: ${item.title} of item: ${it.contentDescription}", Toast.LENGTH_SHORT).show()
+
+                    true
+                }
+
+                popup.show() // Sowing popup menu
             }}
         }
 
         override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
-            holder.textView.text = getItem(position).path
+            val item = getItem(position)
+            holder.textView.text = item.displayPath
             holder.imageView.setImageDrawable(
-                ResourcesCompat.getDrawable(holder.imageView.resources, getItem(position).drawable, null)
+                ResourcesCompat.getDrawable(holder.imageView.resources, item.drawable, null)
             )
+            // Use the content description to hold the full path.
+            holder.cardView.contentDescription = item.fullPath
         }
     }
 

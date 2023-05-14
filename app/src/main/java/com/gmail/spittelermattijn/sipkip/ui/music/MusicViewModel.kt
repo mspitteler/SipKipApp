@@ -25,7 +25,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private val exploredPaths: ArrayList<File> = ArrayList()
     private val promptRegex = """\d+@${Constants.BLUETOOTH_DEVICE_NAME} > \s*""".toRegex()
 
-    data class Item(@DrawableRes val drawable: Int, val path: String)
+    data class Item(@DrawableRes val drawable: Int, val displayPath: String, val fullPath: String)
 
     private val _texts: MutableLiveData<List<Item>> = MutableLiveData()
     val texts: LiveData<List<Item>> = _texts
@@ -80,7 +80,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
                 "heart_clip" -> R.drawable.ic_yellow_heart_button
                 "beak_switch" -> R.drawable.ic_beak_switch
                 else -> R.drawable.ic_unknown
-            }, path.removePrefix("/$firstDirectory/"))
+            }, path.removePrefix("/$firstDirectory/"), opusPaths[i])
         })
     }
 

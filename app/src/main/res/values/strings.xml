@@ -40,4 +40,7 @@
     <string name="snackbar_no_file_picked">No file was picked</string>
     <string name="snackbar_upload_progress">Upload progress</string>
     <string name="snackbar_processing_file">Processing audio file</string>
+    <string name="menu_rename">Rename</string>
+    <string name="menu_remove">Remove</string>
+    <string name="menu_change_first_directory">Change associated clip/switch</string>
 </resources>

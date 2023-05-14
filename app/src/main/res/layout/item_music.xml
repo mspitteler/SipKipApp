@@ -27,6 +27,7 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="This is item # xx" />
 
+    <!-- Uses the contentDescription field to hold the full path of the item -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_view_item_music"
         android:layout_width="@dimen/item_music_image_length"
