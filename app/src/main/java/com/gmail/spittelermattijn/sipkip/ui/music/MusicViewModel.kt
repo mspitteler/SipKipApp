@@ -30,9 +30,9 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private val _texts: MutableLiveData<List<Item>> = MutableLiveData()
     val texts: LiveData<List<Item>> = _texts
 
-    private fun ArrayList<File>.update(callback: KFunction1<ByteArray, Unit>, path: String) {
+    private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
-        val results = CommandUtil.blockingCommand(callback, "ls /littlefs/$pathSlash")
+        val results = CommandUtil.blockingCommand(cb, "ls /littlefs/$pathSlash")
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
             for (line in result.split('\n').filter { !(it matches promptRegex) }) {
@@ -41,7 +41,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
                 if (line matches """[^/]+/\s*""".toRegex()) { // Directory
                     println("Adding directory: $newPath")
                     add(File(FileType.Directory, newPath))
-                    update(callback, newPath)
+                    update(cb, newPath)
                 } else if (line.isNotEmpty()) { // Regular file
                     println("Adding file: $newPath")
                     add(File(FileType.File, newPath))
@@ -85,13 +85,10 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     }
 
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
-        CommandUtil.commandExecutionLock.lock()
-        CommandUtil.commandExecutionResults.addAll(datas!!)
-        val index = CommandUtil.commandExecutionResultsReceivedIndex
+        val index = CommandUtil.addCommandExecutionResults(datas!!)
 
         if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
             CommandUtil.signalCommandExecutionResultsReceived(index)
-        CommandUtil.commandExecutionLock.unlock()
 
         coroutineScope.launch {
             delay(Constants.BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
