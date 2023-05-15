@@ -305,7 +305,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
 
     // Returns true if a new upload was started.
     private fun startSerialUpload(): Boolean {
-        val `1kThreshold` = DEFAULT_XMODEM_1K_THRESHOLD
+        val `1kThreshold` = Constants.DEFAULT_XMODEM_1K_THRESHOLD
         val fileName = (if (opusFileName != null) {
             val name = opusFileName; opusFileName = null; name
         } else {
@@ -352,9 +352,9 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
 
         coroutineScope.launch {
             serialIsBlocking = true
-            delay(500.toDuration(DurationUnit.MILLISECONDS))
+            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
             service!!.write("rm /littlefs/${currentFragment.viewModel.littleFsPath}/heart_clip/$fileName\n".toByteArray())
-            delay(500.toDuration(DurationUnit.MILLISECONDS))
+            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
             service!!.write("rx /littlefs/${currentFragment.viewModel.littleFsPath}/heart_clip/$fileName\n".toByteArray())
             serialQueue.clear()
 
@@ -403,9 +403,5 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             }
             runOnUiThread { snackBar?.setText(session.lastMessage.message) }
         }
-    }
-
-    companion object {
-        const val DEFAULT_XMODEM_1K_THRESHOLD = 8192
     }
 }

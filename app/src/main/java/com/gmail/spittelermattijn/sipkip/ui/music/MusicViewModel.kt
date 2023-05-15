@@ -33,7 +33,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
     private val exploredPaths: ArrayList<File> = ArrayList()
-    private val promptRegex = """\d+@${Constants.BLUETOOTH_DEVICE_NAME} > \s*""".toRegex()
+    private val promptRegex = """\d+@${Constants.DEFAULT_BLUETOOTH_DEVICE_NAME} > \s*""".toRegex()
 
     data class Item(@DrawableRes val drawable: Int, val displayPath: String, val fullPath: String)
 
@@ -102,7 +102,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
         // Use Dispatchers.Main here to make sure signalCommandExecutionResultsReceived gets run on the same thread.
         CoroutineScope(Dispatchers.Main).launch {
-            delay(Constants.BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
+            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
             CommandUtil.signalCommandExecutionResultsReceived(index)
         }
     }

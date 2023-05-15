@@ -168,7 +168,7 @@ class FindDeviceActivity : AppCompatActivity() {
             for (device in bluetoothAdapter.bondedDevices)
                 if (device.type != BluetoothDevice.DEVICE_TYPE_LE) bondedBluetoothDevices.add(device)
             bondedBluetoothDevices.sortWith{ a: BluetoothDevice?, b: BluetoothDevice? -> BluetoothUtil.compareTo(a!!, b!!) }
-            bondedBluetoothDevice = bondedBluetoothDevices.find { device -> device?.name == Constants.BLUETOOTH_DEVICE_NAME }
+            bondedBluetoothDevice = bondedBluetoothDevices.find { device -> device?.name == Constants.DEFAULT_BLUETOOTH_DEVICE_NAME }
 
             // If we haven't connected before, try to discover it.
             if (bondedBluetoothDevice == null) {
@@ -192,7 +192,7 @@ class FindDeviceActivity : AppCompatActivity() {
                     // Discovery has found a device. Get the BluetoothDevice
                     // object and its info from the Intent.
                     val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
-                    if (device.name == Constants.BLUETOOTH_DEVICE_NAME) {
+                    if (device.name == Constants.DEFAULT_BLUETOOTH_DEVICE_NAME) {
                         device.createBond()
                         foundDevice = true
                         if (bluetoothAdapter.isDiscovering)
@@ -201,7 +201,7 @@ class FindDeviceActivity : AppCompatActivity() {
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
                     val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
-                    if (device.name == Constants.BLUETOOTH_DEVICE_NAME)
+                    if (device.name == Constants.DEFAULT_BLUETOOTH_DEVICE_NAME)
                         bluetoothDevice = bluetoothAdapter.getRemoteDevice(device.address)
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED ->

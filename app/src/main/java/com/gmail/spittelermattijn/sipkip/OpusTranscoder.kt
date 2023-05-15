@@ -27,9 +27,9 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     var onFinishedListener: KFunction2<OutputStream, OutputStream, Unit>? = null
 
     init {
-        val encoderSampleRate = ENCODER_SAMPLE_RATE
-        val encoderChannelCount = ENCODER_CHANNEL_COUNT
-        val encoderBitRate = ENCODER_BIT_RATE
+        val encoderSampleRate = Constants.DEFAULT_ENCODER_SAMPLE_RATE
+        val encoderChannelCount = Constants.DEFAULT_ENCODER_CHANNEL_COUNT
+        val encoderBitRate = Constants.DEFAULT_ENCODER_BIT_RATE
         encoder.open(encoderChannelCount, encoderSampleRate, encoderBitRate)
 
         extractor.setDataSource(input.fileDescriptor)
@@ -83,9 +83,9 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     }
 
     fun start(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
-        val encoderSampleRate = ENCODER_SAMPLE_RATE
-        val encoderChannelCount = ENCODER_CHANNEL_COUNT
-        val encoderFrameSize = ENCODER_FRAME_SIZE
+        val encoderSampleRate = Constants.DEFAULT_ENCODER_SAMPLE_RATE
+        val encoderChannelCount = Constants.DEFAULT_ENCODER_CHANNEL_COUNT
+        val encoderFrameSize = Constants.DEFAULT_ENCODER_FRAME_SIZE
         decoder?.setCallback(object : MediaCodec.Callback() {
             override fun onInputBufferAvailable(mc: MediaCodec, inputBufferId: Int) {
                 val inputBuffer = mc.getInputBuffer(inputBufferId)!!
@@ -191,12 +191,7 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     }
 
     private companion object {
-        // The frame size is hardcoded for this sample code but it doesn't have to be.
-        const val ENCODER_SAMPLE_RATE = 48000
-        const val ENCODER_CHANNEL_COUNT = 1
         const val ENCODER_PCM_ENCODING = AudioFormat.ENCODING_PCM_16BIT
-        const val ENCODER_BIT_RATE = 16000
-        const val ENCODER_FRAME_SIZE = ENCODER_SAMPLE_RATE * 60 / 1000 // 60 ms frames
     }
 
     private class Resampler constructor(private val resampleRatio: Float, channelCount: Int) {
