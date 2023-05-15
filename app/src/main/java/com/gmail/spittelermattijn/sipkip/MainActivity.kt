@@ -1,6 +1,5 @@
 package com.gmail.spittelermattijn.sipkip
 
-import android.app.AlertDialog
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
 import android.content.Context
@@ -25,6 +24,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
 import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
@@ -304,14 +304,18 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         opusPacketsOutput.close()
         (args as? Snackbar?)?.dismiss()
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Pick associated clip/switch")
-        val items = arrayOf("star_clip", "triangle_clip", "square_clip", "heart_clip", "beak_switch")
+        val items = arrayOf(
+            R.string.first_directory_star_clip to "star_clip", R.string.first_directory_triangle_clip to "triangle_clip",
+            R.string.first_directory_square_clip to "square_clip", R.string.first_directory_heart_clip to "heart_clip",
+            R.string.first_directory_beak_switch to "beak_switch"
+        )
         var checkedItem = 0
-        builder.setSingleChoiceItems(items, checkedItem) { dialog, which -> checkedItem = which }
-        builder.setNegativeButton(android.R.string.cancel, null)
-        builder.setPositiveButton(android.R.string.ok) { dialog, which -> startSerialUpload(items[checkedItem]) }
-        builder.show()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dialog_pick_first_directory)
+            .setSingleChoiceItems(items.map { getString(it.first) }.toTypedArray(), checkedItem) { dialog, which -> checkedItem = which }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { dialog, which -> startSerialUpload(items[checkedItem].second) }
+            .show()
     }
 
     // Returns true if a new upload was started.

@@ -43,4 +43,10 @@
     <string name="menu_rename">Rename</string>
     <string name="menu_remove">Remove</string>
     <string name="menu_change_first_directory">Change associated clip/switch</string>
+    <string name="first_directory_star_clip">Star clip</string>
+    <string name="first_directory_triangle_clip">Triangle clip</string>
+    <string name="first_directory_square_clip">Square clip</string>
+    <string name="first_directory_heart_clip">Heart clip</string>
+    <string name="first_directory_beak_switch">Beak switch</string>
+    <string name="dialog_pick_first_directory">Pick associated clip/switch</string>
 </resources>
