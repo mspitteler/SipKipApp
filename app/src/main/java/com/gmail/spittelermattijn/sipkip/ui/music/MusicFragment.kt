@@ -19,9 +19,11 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.gmail.spittelermattijn.sipkip.R
+import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentMusicBinding
 import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
 import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
+import kotlinx.coroutines.launch
 
 
 /**
@@ -87,7 +89,10 @@ class MusicFragment : FragmentBase() {
                         }
                         R.id.option_remove -> {
                             Toast.makeText(it.context, "Removing file: ${it.contentDescription}", Toast.LENGTH_SHORT).show()
-                            fragment.viewModel.removeItem(it.contentDescription.toString())
+                            coroutineScope.launch {
+                                fragment.viewModel.removeItem(it.contentDescription.toString())
+                                fragment.viewModel.update()
+                            }
                         }
                         R.id.option_change_first_directory -> {
                             Toast.makeText(it.context, "Changing associated clip/switch of: ${it.contentDescription} to: ${it.contentDescription.split('/').filter { elem -> elem.isNotEmpty() }[1]}", Toast.LENGTH_SHORT).show()

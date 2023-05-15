@@ -9,6 +9,8 @@ import com.gmail.spittelermattijn.sipkip.Constants
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.reflect.KFunction1
@@ -19,6 +21,14 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     override val littleFsPath = "/music"
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
     override var serialWriteCallback: KFunction1<ByteArray, Unit>? = null
+        set(cb) {
+            field = cb
+            coroutineScope.launch {
+                // Wait for first prompt by sending empty command.
+                field?.let { CommandUtil.blockingCommand(it, "\n") }
+                update()
+            }
+        }
 
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
@@ -32,7 +42,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
     private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
-        val results = CommandUtil.blockingCommand(cb, "ls /littlefs/$pathSlash")
+        val results = CommandUtil.blockingCommand(cb, "ls /littlefs/$pathSlash\n")
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
             for (line in result.split('\n').filter { !(it matches promptRegex) }) {
@@ -90,28 +100,23 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
             CommandUtil.signalCommandExecutionResultsReceived(index)
 
-        coroutineScope.launch {
+        // Use Dispatchers.Main here to make sure signalCommandExecutionResultsReceived gets run on the same thread.
+        CoroutineScope(Dispatchers.Main).launch {
             delay(Constants.BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
             CommandUtil.signalCommandExecutionResultsReceived(index)
         }
     }
 
     fun removeItem(fullPath: String) {
-        coroutineScope.launch {
-            serialWriteCallback?.let {
-                CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus")
-                CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus_packets")
-            }
+        serialWriteCallback?.let {
+            CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus\n")
+            CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus_packets\n")
         }
     }
 
-    // TODO Make this a service or something
-    init {
-        coroutineScope.launch { while (true) {
-            exploredPaths.clear(littleFsPath)
-            serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }
-            updateLiveData()
-            delay(Constants.BLUETOOTH_GET_DEVICE_FILES_DELAY.toDuration(DurationUnit.SECONDS))
-        }}
+    fun update() {
+        exploredPaths.clear(littleFsPath)
+        serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }
+        updateLiveData()
     }
 }
