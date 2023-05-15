@@ -13,7 +13,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.ceil
 import kotlin.reflect.KFunction0
-import kotlin.reflect.KFunction2
+import kotlin.reflect.KFunction3
 
 class OpusTranscoder(input: ParcelFileDescriptor) {
     // Use a dedicated Opus encoder, since MediaCodec only supports Opus encoding from Android 10 onwards.
@@ -22,9 +22,10 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     private var decoder: MediaCodec? = null
     private var resampleBuffer: ByteBuffer? = null
     private var sos = true
+    private var args: Any? = null
 
-    var onStartedListener: KFunction0<Unit>? = null
-    var onFinishedListener: KFunction2<OutputStream, OutputStream, Unit>? = null
+    var onStartedListener: KFunction0<Any?>? = null
+    var onFinishedListener: KFunction3<OutputStream, OutputStream, Any?, Unit>? = null
 
     init {
         val encoderSampleRate = Constants.DEFAULT_ENCODER_SAMPLE_RATE
@@ -163,13 +164,13 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
                 mc.releaseOutputBuffer(outputBufferId, false)
 
                 if (sos) {
-                    onStartedListener!!()
+                    args = onStartedListener!!()
                     sos = false
                 }
 
                 if (eos) {
                     resampleBuffer = null
-                    onFinishedListener!!(opusOutput, opusPacketsOutput)
+                    onFinishedListener!!(opusOutput, opusPacketsOutput, args)
                     encoder.close()
                     extractor.release()
                     coroutineScope.launch {

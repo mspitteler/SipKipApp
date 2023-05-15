@@ -1,5 +1,6 @@
 package com.gmail.spittelermattijn.sipkip
 
+import android.app.AlertDialog
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
 import android.content.Context
@@ -41,7 +42,7 @@ import java.util.concurrent.BlockingQueue
 import kotlin.properties.Delegates
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-import kotlin.reflect.KFunction0
+import kotlin.reflect.KFunction1
 
 
 class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
@@ -283,28 +284,38 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         finish()
     }
 
-    private fun onTranscoderStarted() {
+    private fun onTranscoderStarted(): Any? {
+        var bar: Snackbar? = null
         binding.appBarMain.fab?.let {
-            val bar = Snackbar.make(it, R.string.snackbar_processing_file, Snackbar.LENGTH_INDEFINITE)
-            val snackView = bar.view as SnackbarLayout
+            bar = Snackbar.make(it, R.string.snackbar_processing_file, Snackbar.LENGTH_INDEFINITE)
+            val snackView = bar!!.view as SnackbarLayout
             val progressBar = LinearProgressIndicator(this)
             progressBar.isIndeterminate = true
             snackView.addView(progressBar)
-            bar.show()
+            bar!!.show()
         }
+        return bar
     }
 
-    private fun onTranscoderFinished(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
+    private fun onTranscoderFinished(opusOutput: OutputStream, opusPacketsOutput: OutputStream, args: Any?) {
         getContentFd?.close()
         getContentFd = null
         opusOutput.close()
         opusPacketsOutput.close()
+        (args as? Snackbar?)?.dismiss()
 
-        startSerialUpload()
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Pick associated clip/switch")
+        val items = arrayOf("star_clip", "triangle_clip", "square_clip", "heart_clip", "beak_switch")
+        var checkedItem = 0
+        builder.setSingleChoiceItems(items, checkedItem) { dialog, which -> checkedItem = which }
+        builder.setNegativeButton(android.R.string.cancel, null)
+        builder.setPositiveButton(android.R.string.ok) { dialog, which -> startSerialUpload(items[checkedItem]) }
+        builder.show()
     }
 
     // Returns true if a new upload was started.
-    private fun startSerialUpload(): Boolean {
+    private fun startSerialUpload(firstDirectory: String): Boolean {
         val `1kThreshold` = Constants.DEFAULT_XMODEM_1K_THRESHOLD
         val fileName = (if (opusFileName != null) {
             val name = opusFileName; opusFileName = null; name
@@ -331,13 +342,13 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             }, filePath
         )
 
-        setupSerialUpload(sx.session, fileName, ::startSerialUpload)
+        setupSerialUpload(sx.session, firstDirectory, fileName, ::startSerialUpload)
         val transferThread = Thread(sx)
         transferThread.start()
         return true
     }
 
-    private fun setupSerialUpload(session: SerialFileTransferSession, fileName: String, cb: KFunction0<Boolean>) {
+    private fun setupSerialUpload(session: SerialFileTransferSession, firstDirectory: String, fileName: String, cb: KFunction1<String, Boolean>) {
         var snackBar: Snackbar? = null
         var progressBar: ProgressBar? = null
         binding.appBarMain.fab?.let { runOnUiThread {
@@ -353,9 +364,9 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         coroutineScope.launch {
             serialIsBlocking = true
             delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
-            service!!.write("rm /littlefs/${currentFragment.viewModel.littleFsPath}/heart_clip/$fileName\n".toByteArray())
+            service!!.write("rm /littlefs/${currentFragment.viewModel.littleFsPath}/$firstDirectory/$fileName\n".toByteArray())
             delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
-            service!!.write("rx /littlefs/${currentFragment.viewModel.littleFsPath}/heart_clip/$fileName\n".toByteArray())
+            service!!.write("rx /littlefs/${currentFragment.viewModel.littleFsPath}/$firstDirectory/$fileName\n".toByteArray())
             serialQueue.clear()
 
             // Emit messages as they are recorded.
@@ -371,7 +382,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
                         }
                         SerialFileTransferSession.State.END -> {
                             // Recursive call to upload the second file, also restore serial to normal mode if no new upload is started.
-                            serialIsBlocking = cb()
+                            serialIsBlocking = cb(firstDirectory)
                             // All done, bail out.
                             true
                         }
