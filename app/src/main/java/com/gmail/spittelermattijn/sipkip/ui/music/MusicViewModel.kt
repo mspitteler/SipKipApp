@@ -24,9 +24,11 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         set(cb) {
             field = cb
             coroutineScope.launch {
-                // Wait for first prompt by sending empty command.
-                field?.let { CommandUtil.blockingCommand(it, "\n") }
-                update()
+                synchronized(getApplication<Application>().applicationContext) {
+                    // Wait for first prompt by sending empty command.
+                    field?.let { CommandUtil.blockingCommand(it, "\n") }
+                    update()
+                }
             }
         }
 

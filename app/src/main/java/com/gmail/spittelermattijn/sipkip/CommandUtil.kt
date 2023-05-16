@@ -11,9 +11,9 @@ object CommandUtil {
     private var resultsReceived = BooleanArray(UByte.MAX_VALUE.toInt() + 1) { false }
     private var resultsReceivedIndex = 0.toUByte()
 
-    private fun write(cb: KFunction1<ByteArray, Unit>, data: ByteArray) {
+    private fun <T> KFunction1<T, Unit>.noException(data: T) {
         // We'll catch it later when the read in SerialService fails.
-        try { cb(data) } catch (ignored: Exception) {}
+        try { this(data) } catch (ignored: Exception) {}
     }
 
     fun signalCommandExecutionResultsReceived(index: UByte) = with(lock) {
@@ -38,7 +38,7 @@ object CommandUtil {
     fun blockingCommand(cb: KFunction1<ByteArray, Unit>, command: String): List<ByteArray?> = with(lock) {
         val ret: ArrayList<ByteArray?>
         lock()
-        write(cb, command.toByteArray())
+        cb.noException(command.toByteArray())
         resultsReceived[(++resultsReceivedIndex + 1.toUByte()).toUByte().toInt()] = false
         try {
             while (!resultsReceived[resultsReceivedIndex.toInt()])
