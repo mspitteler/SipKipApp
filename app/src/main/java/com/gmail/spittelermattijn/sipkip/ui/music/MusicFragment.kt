@@ -54,6 +54,14 @@ class MusicFragment : FragmentBase() {
         recyclerView.adapter = adapter
         viewModel.texts.observe(viewLifecycleOwner) { adapter.submitList(it) }
 
+        val swipeRefreshLayout = binding.swipeRefreshLayoutMusic
+        swipeRefreshLayout.setOnRefreshListener {
+            coroutineScope.launch {
+                viewModel.update()
+                swipeRefreshLayout.isRefreshing = false
+            }
+        }
+
         return root
     }
 
