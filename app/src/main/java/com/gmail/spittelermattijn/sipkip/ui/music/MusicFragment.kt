@@ -58,7 +58,7 @@ class MusicFragment : FragmentBase() {
         swipeRefreshLayout.setOnRefreshListener {
             coroutineScope.launch {
                 viewModel.update()
-                swipeRefreshLayout.isRefreshing = false
+                swipeRefreshLayout.post { swipeRefreshLayout.isRefreshing = false }
             }
         }
 
