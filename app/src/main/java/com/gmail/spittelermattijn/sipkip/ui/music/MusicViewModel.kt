@@ -11,11 +11,8 @@ import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.reflect.KFunction1
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 class MusicViewModel(application: Application) : ViewModelBase(application) {
     override val littleFsPath = "/music"
@@ -100,13 +97,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         val index = CommandUtil.addCommandExecutionResults(datas!!)
 
         if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
-            CommandUtil.signalCommandExecutionResultsReceived(index)
-
-        // Use Dispatchers.Main here to make sure signalCommandExecutionResultsReceived gets run on the same thread.
-        CoroutineScope(Dispatchers.Main).launch {
-            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
-            CommandUtil.signalCommandExecutionResultsReceived(index)
-        }
+            CoroutineScope(Dispatchers.Main).launch { CommandUtil.signalCommandExecutionResultsReceived(index) }
     }
 
     fun removeItem(fullPath: String) {

@@ -1,7 +1,13 @@
 package com.gmail.spittelermattijn.sipkip
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.reflect.KFunction1
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 object CommandUtil {
     private val lock = ReentrantLock()
@@ -30,7 +36,7 @@ object CommandUtil {
     }
 
     fun addCommandExecutionResults(datas: ArrayDeque<ByteArray?>): UByte = with(lock) {
-        lock()
+        CoroutineScope(Dispatchers.Main).launch { lock() }
         results.addAll(datas)
         return resultsReceivedIndex
     }
@@ -40,6 +46,15 @@ object CommandUtil {
         lock()
         cb.noException(command.toByteArray())
         resultsReceived[(++resultsReceivedIndex + 1.toUByte()).toUByte().toInt()] = false
+
+        // Use Dispatchers.Main here to make sure signalCommandExecutionResultsReceived gets run on the same thread.
+        val index = resultsReceivedIndex
+        CoroutineScope(Dispatchers.Main).launch {
+            lock()
+            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
+            signalCommandExecutionResultsReceived(index)
+        }
+
         try {
             while (!resultsReceived[resultsReceivedIndex.toInt()])
                 condition.await()
