@@ -107,6 +107,19 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         }
     }
 
+    fun renameItem(fullPath: String, newFullPath: String) {
+        serialWriteCallback?.let {
+            CommandUtil.blockingCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n", true)
+            CommandUtil.blockingCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n", true)
+        }
+    }
+
+    fun changeItemFirstDirectory(fullPath: String, firstDirectory: String) {
+        val path = fullPath.removePrefix(littleFsPath)
+        val newFullPath = "$littleFsPath/${path.replaceFirst("[^/]+/".toRegex(), "$firstDirectory/")}"
+        renameItem(fullPath, newFullPath)
+    }
+
     fun update() {
         exploredPaths.clear(littleFsPath)
         serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }

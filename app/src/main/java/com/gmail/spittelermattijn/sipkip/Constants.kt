@@ -11,6 +11,7 @@ internal object Constants {
 
     const val DEFAULT_BLUETOOTH_DEVICE_NAME = "SipKip"
     const val DEFAULT_BLUETOOTH_COMMAND_TIMEOUT = 500 // ms
+    const val DEFAULT_BLUETOOTH_COMMAND_LONG_TIMEOUT = 5000 // ms
     const val DEFAULT_XMODEM_1K_THRESHOLD = 8192
     const val DEFAULT_ENCODER_SAMPLE_RATE = 48000
     const val DEFAULT_ENCODER_CHANNEL_COUNT = 1

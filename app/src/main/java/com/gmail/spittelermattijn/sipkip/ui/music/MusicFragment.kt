@@ -1,9 +1,11 @@
 package com.gmail.spittelermattijn.sipkip.ui.music
 
 import android.bluetooth.BluetoothDevice
+import android.content.Context
 import android.os.Bundle
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -22,7 +24,10 @@ import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentMusicBinding
 import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
+import com.gmail.spittelermattijn.sipkip.showFirstDirectoryPicker
+import com.gmail.spittelermattijn.sipkip.showRenameEditText
 import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
 
@@ -89,26 +94,7 @@ class MusicFragment : FragmentBase() {
                 popup.menuInflater.inflate(R.menu.item_music_options, popup.menu)
 
                 // Registering popup with OnMenuItemClickListener
-                popup.setOnMenuItemClickListener { item ->
-                    val fragment = it.findFragment<MusicFragment>()
-                    when (item.itemId) {
-                        R.id.option_rename -> {
-                            Toast.makeText(it.context, "Renaming file: ${it.contentDescription} to: ${it.contentDescription}", Toast.LENGTH_SHORT).show()
-                        }
-                        R.id.option_remove -> {
-                            Toast.makeText(it.context, "Removing file: ${it.contentDescription}", Toast.LENGTH_SHORT).show()
-                            coroutineScope.launch {
-                                fragment.viewModel.removeItem(it.contentDescription.toString())
-                                fragment.viewModel.update()
-                            }
-                        }
-                        R.id.option_change_first_directory -> {
-                            Toast.makeText(it.context, "Changing associated clip/switch of: ${it.contentDescription} to: ${it.contentDescription.split('/').filter { elem -> elem.isNotEmpty() }[1]}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    true
-                }
-
+                popup.setOnMenuItemClickListener(OnMenuItemClickListener(it.context, it.contentDescription.toString(), it.findFragment()))
                 popup.show() // Sowing popup menu
             }}
         }
@@ -121,6 +107,41 @@ class MusicFragment : FragmentBase() {
             )
             // Use the content description to hold the full path.
             holder.cardView.contentDescription = item.fullPath
+        }
+    }
+
+    private class OnMenuItemClickListener(val context: Context, val fullPath: String, val fragment: MusicFragment) : PopupMenu.OnMenuItemClickListener {
+        override fun onMenuItemClick(item: MenuItem): Boolean {
+            val path = fullPath.removePrefix(fragment.viewModel.littleFsPath)
+            val firstDirectory = path.split('/').first { it.isNotEmpty() }
+            when (item.itemId) {
+                R.id.option_rename -> {
+                    MaterialAlertDialogBuilder(context).showRenameEditText(path.replaceFirst("/*$firstDirectory/*".toRegex(), "")) {
+                        Toast.makeText(context, context.getString(R.string.toast_rename, fullPath, it), Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch {
+                            fragment.viewModel.renameItem(fullPath, "${fragment.viewModel.littleFsPath}/$firstDirectory/$it")
+                            fragment.viewModel.update()
+                        }
+                    }
+                }
+                R.id.option_remove -> {
+                    Toast.makeText(context, context.getString(R.string.toast_remove, fullPath), Toast.LENGTH_SHORT).show()
+                    coroutineScope.launch {
+                        fragment.viewModel.removeItem(fullPath)
+                        fragment.viewModel.update()
+                    }
+                }
+                R.id.option_change_first_directory -> {
+                    MaterialAlertDialogBuilder(context).showFirstDirectoryPicker(firstDirectory) {
+                        Toast.makeText(context, context.getString(R.string.toast_change_first_directory, fullPath, it), Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch {
+                            fragment.viewModel.changeItemFirstDirectory(fullPath, it)
+                            fragment.viewModel.update()
+                        }
+                    }
+                }
+            }
+            return true
         }
     }
 

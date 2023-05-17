@@ -41,7 +41,7 @@ object CommandUtil {
         return resultsReceivedIndex
     }
 
-    fun blockingCommand(cb: KFunction1<ByteArray, Unit>, command: String): List<ByteArray?> = with(lock) {
+    fun blockingCommand(cb: KFunction1<ByteArray, Unit>, command: String, longTimeout: Boolean = false): List<ByteArray?> = with(lock) {
         val ret: ArrayList<ByteArray?>
         lock()
         cb.noException(command.toByteArray())
@@ -51,7 +51,12 @@ object CommandUtil {
         val index = resultsReceivedIndex
         CoroutineScope(Dispatchers.Main).launch {
             lock()
-            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
+            delay(
+                (if (longTimeout)
+                    Constants.DEFAULT_BLUETOOTH_COMMAND_LONG_TIMEOUT
+                else
+                    Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT).toDuration(DurationUnit.MILLISECONDS)
+            )
             signalCommandExecutionResultsReceived(index)
         }
 

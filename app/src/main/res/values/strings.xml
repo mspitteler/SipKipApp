@@ -42,4 +42,8 @@
     <string name="first_directory_heart_clip">Heart clip</string>
     <string name="first_directory_beak_switch">Beak switch</string>
     <string name="dialog_pick_first_directory">Pick associated clip/switch</string>
+    <string name="toast_rename">Renaming file: %s to: %s</string>
+    <string name="toast_remove">Removing file: %s</string>
+    <string name="toast_change_first_directory">Changing associated clip/switch of: %s to: %s</string>
+    <string name="dialog_enter_path">Enter new path</string>
 </resources>

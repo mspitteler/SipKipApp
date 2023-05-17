@@ -304,18 +304,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         opusPacketsOutput.close()
         (args as? Snackbar?)?.dismiss()
 
-        val items = arrayOf(
-            R.string.first_directory_star_clip to "star_clip", R.string.first_directory_triangle_clip to "triangle_clip",
-            R.string.first_directory_square_clip to "square_clip", R.string.first_directory_heart_clip to "heart_clip",
-            R.string.first_directory_beak_switch to "beak_switch"
-        )
-        var checkedItem = 0
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.dialog_pick_first_directory)
-            .setSingleChoiceItems(items.map { getString(it.first) }.toTypedArray(), checkedItem) { dialog, which -> checkedItem = which }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { dialog, which -> startSerialUpload(items[checkedItem].second) }
-            .show()
+        MaterialAlertDialogBuilder(this).showFirstDirectoryPicker { startSerialUpload(it) }
     }
 
     // Returns true if a new upload was started.
