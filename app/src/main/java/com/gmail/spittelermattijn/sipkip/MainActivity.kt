@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         ) { uri ->
             if (uri != null) {
                 getContentFd = contentResolver.openFileDescriptor(uri, "r")
-                val getContentFileName = contentResolver.queryName(uri)
+                val getContentFileName = contentResolver.queryName(uri).replace("""\s""".toRegex(), "_")
                 opusFileName = "$getContentFileName.opus"
                 opusPacketsFileName = "$getContentFileName.opus_packets"
                 val opusOutput = openFileOutput(opusFileName, Context.MODE_PRIVATE)
