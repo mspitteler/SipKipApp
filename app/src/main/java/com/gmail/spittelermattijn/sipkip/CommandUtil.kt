@@ -1,13 +1,9 @@
 package com.gmail.spittelermattijn.sipkip
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import android.os.Handler
+import android.os.Looper
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.reflect.KFunction1
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 object CommandUtil {
     private val lock = ReentrantLock()
@@ -16,6 +12,7 @@ object CommandUtil {
     private val results: ArrayList<ByteArray?> = ArrayList()
     private var resultsReceived = BooleanArray(UByte.MAX_VALUE.toInt() + 1) { false }
     private var resultsReceivedIndex = 0.toUByte()
+    private var handler = Handler(Looper.getMainLooper())
 
     private fun <T> KFunction1<T, Unit>.noException(data: T) {
         // We'll catch it later when the read in SerialService fails.
@@ -24,19 +21,21 @@ object CommandUtil {
 
     fun signalCommandExecutionResultsReceived(index: UByte) = with(lock) {
         if (!resultsReceived[index.toInt()]) {
-            try {
-                resultsReceived[index.toInt()] = true
-                condition.signal()
-            } finally {
-                do {
-                    unlock()
-                } while (isLocked)
+            handler.post {
+                try {
+                    resultsReceived[index.toInt()] = true
+                    condition.signal()
+                } finally {
+                    do {
+                        unlock()
+                    } while (isLocked)
+                }
             }
         }
     }
 
     fun addCommandExecutionResults(datas: ArrayDeque<ByteArray?>): UByte = with(lock) {
-        CoroutineScope(Dispatchers.Main).launch { lock() }
+        handler.post { lock() }
         results.addAll(datas)
         return resultsReceivedIndex
     }
@@ -49,16 +48,13 @@ object CommandUtil {
 
         // Use Dispatchers.Main here to make sure signalCommandExecutionResultsReceived gets run on the same thread.
         val index = resultsReceivedIndex
-        CoroutineScope(Dispatchers.Main).launch {
-            lock()
-            delay(
-                (if (longTimeout)
+        handler.post { lock() }
+        handler.postDelayed({ signalCommandExecutionResultsReceived(index) }, (
+                if (longTimeout)
                     Constants.DEFAULT_BLUETOOTH_COMMAND_LONG_TIMEOUT
                 else
-                    Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT).toDuration(DurationUnit.MILLISECONDS)
-            )
-            signalCommandExecutionResultsReceived(index)
-        }
+                    Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT
+                ).toLong())
 
         try {
             while (!resultsReceived[resultsReceivedIndex.toInt()])

@@ -344,15 +344,15 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private fun setupSerialUpload(session: SerialFileTransferSession, firstDirectory: String, fileName: String, cb: KFunction1<String, Boolean>) {
         var snackBar: Snackbar? = null
         var progressBar: ProgressBar? = null
-        binding.appBarMain.fab?.let { runOnUiThread {
-            snackBar = Snackbar.make(it, R.string.snackbar_upload_progress, Snackbar.LENGTH_LONG)
+        binding.appBarMain.fab?.post {
+            snackBar = Snackbar.make(binding.appBarMain.fab!!, R.string.snackbar_upload_progress, Snackbar.LENGTH_LONG)
             val snackView = snackBar!!.view as SnackbarLayout
             progressBar = LinearProgressIndicator(this)
             progressBar!!.isIndeterminate = false
             progressBar!!.max = 100 // percent
             snackView.addView(progressBar)
             snackBar!!.show()
-        }}
+        }
 
         coroutineScope.launch {
             serialIsBlocking = true
@@ -402,7 +402,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
                     //session.cancelTransfer(false)
                     // Restart timeout.
                     snackBar?.show()
-                    runOnUiThread { progressBar?.progress = percent }
+                    progressBar?.post { progressBar!!.progress = percent }
                 }
             }
             runOnUiThread { snackBar?.setText(session.lastMessage.message) }

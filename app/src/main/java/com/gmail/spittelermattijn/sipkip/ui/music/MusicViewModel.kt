@@ -9,8 +9,6 @@ import com.gmail.spittelermattijn.sipkip.Constants
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.reflect.KFunction1
 
@@ -97,7 +95,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         val index = CommandUtil.addCommandExecutionResults(datas!!)
 
         if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
-            CoroutineScope(Dispatchers.Main).launch { CommandUtil.signalCommandExecutionResultsReceived(index) }
+            CommandUtil.signalCommandExecutionResultsReceived(index)
     }
 
     fun removeItem(fullPath: String) {
