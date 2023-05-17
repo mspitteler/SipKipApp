@@ -56,10 +56,13 @@ fun MaterialAlertDialogBuilder.showFirstDirectoryPicker(default: String? = null,
 }
 
 fun MaterialAlertDialogBuilder.showRenameEditText(default: String? = null, cb: (String) -> Unit) {
-    val editText = EditText(context).apply { default?.let { setText(it) } }
+    val editText = EditText(context).apply { setText(default) }
     setTitle(R.string.dialog_enter_path)
         .setView(editText)
         .setNegativeButton(android.R.string.cancel, null)
-        .setPositiveButton(android.R.string.ok) { dialog, which -> cb(editText.text.toString()) }
+        .setPositiveButton(android.R.string.ok) { dialog, which ->
+            val text = if (editText.text.isNullOrEmpty()) "default" else editText.text
+            cb(text.replace("""\s""".toRegex(), "_"))
+        }
         .show()
 }
