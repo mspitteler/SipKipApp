@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string translatable="false" name="bluetooth_device_name_key">bluetooth_device_name</string>
+    <string translatable="false" name="bluetooth_command_timeout_key">bluetooth_command_timeout</string>
+    <string translatable="false" name="bluetooth_command_long_timeout_key">bluetooth_command_long_timeout</string>
+    <string translatable="false" name="xmodem_1k_threshold_key">xmodem_1k_threshold</string>
+    <string translatable="false" name="xmodem_use_crc_key">xmodem_use_crc</string>
+    <string translatable="false" name="encoder_sample_rate_key">encoder_sample_rate</string>
+    <string translatable="false" name="encoder_stereo_key">encoder_stereo</string>
+    <string translatable="false" name="encoder_bitrate_key">encoder_bitrate</string>
+    <string translatable="false" name="encoder_frame_size_key">encoder_frame_size</string>
+</resources>

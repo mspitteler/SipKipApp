@@ -12,6 +12,7 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.ceil
+import kotlin.math.round
 import kotlin.reflect.KFunction0
 import kotlin.reflect.KFunction3
 
@@ -24,14 +25,15 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     private var sos = true
     private var args: Any? = null
 
+    private val encoderSampleRate: Int = Preferences[R.string.encoder_sample_rate_key]
+    private val encoderChannelCount: Int = if (Preferences[R.string.encoder_stereo_key]) 2 else 1
+    private val encoderBitrate: Int = Preferences[R.string.encoder_bitrate_key]
+
     var onStartedListener: KFunction0<Any?>? = null
     var onFinishedListener: KFunction3<OutputStream, OutputStream, Any?, Unit>? = null
 
     init {
-        val encoderSampleRate = Constants.DEFAULT_ENCODER_SAMPLE_RATE
-        val encoderChannelCount = Constants.DEFAULT_ENCODER_CHANNEL_COUNT
-        val encoderBitRate = Constants.DEFAULT_ENCODER_BIT_RATE
-        encoder.open(encoderChannelCount, encoderSampleRate, encoderBitRate)
+        encoder.open(encoderChannelCount, encoderSampleRate, encoderBitrate)
 
         extractor.setDataSource(input.fileDescriptor)
         var sampleRate = 0
@@ -84,9 +86,7 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     }
 
     fun start(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
-        val encoderSampleRate = Constants.DEFAULT_ENCODER_SAMPLE_RATE
-        val encoderChannelCount = Constants.DEFAULT_ENCODER_CHANNEL_COUNT
-        val encoderFrameSize = Constants.DEFAULT_ENCODER_FRAME_SIZE
+        val encoderFrameSize = Preferences.get<Float>(R.string.encoder_frame_size_key) * encoderSampleRate / 1000f
         decoder?.setCallback(object : MediaCodec.Callback() {
             override fun onInputBufferAvailable(mc: MediaCodec, inputBufferId: Int) {
                 val inputBuffer = mc.getInputBuffer(inputBufferId)!!
@@ -146,7 +146,7 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
                     resampleBuffer!!.flip()
                     var size = resampleBuffer!!.remaining()
                     while (size >= encoderFrameSize * encoderChannelCount * 2) {
-                        ByteArray(encoderFrameSize * encoderChannelCount * 2).let {
+                        ByteArray(round(encoderFrameSize * encoderChannelCount * 2f).toInt()).let {
                             resampleBuffer!!.get(it)
                             val shortArray = ShortArray(it.size / 2)
                             ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shortArray)
@@ -155,7 +155,7 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
                             // Little endian.
                             opusPacketsOutput.write(byteArrayOf((result.size and 0xFF).toByte(), (result.size shl 8).toByte()))
                         }
-                        size -= encoderFrameSize * encoderChannelCount * 2
+                        size -= round(encoderFrameSize * encoderChannelCount * 2f).toInt()
                     }
                     // Make available for writing again.
                     resampleBuffer!!.compact()

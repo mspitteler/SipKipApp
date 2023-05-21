@@ -51,9 +51,9 @@ object CommandUtil {
         handler.post { lock() }
         handler.postDelayed({ signalCommandExecutionResultsReceived(index) }, (
                 if (longTimeout)
-                    Constants.DEFAULT_BLUETOOTH_COMMAND_LONG_TIMEOUT
+                    Preferences.get<Int>(R.string.bluetooth_command_long_timeout_key)
                 else
-                    Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT
+                    Preferences[R.string.bluetooth_command_timeout_key]
                 ).toLong())
 
         try {

@@ -23,7 +23,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
-import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
+import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -51,8 +51,8 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private lateinit var filePickerActivityResultLauncher: ActivityResultLauncher<String>
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bluetoothDevice: BluetoothDevice
-    private val currentFragment: FragmentBase
-        get() = (navHostFragment.childFragmentManager.fragments[0] as FragmentBase)
+    private val currentFragment: FragmentInterface
+        get() = (navHostFragment.childFragmentManager.fragments[0] as FragmentInterface)
     private var getContentFd: ParcelFileDescriptor? = null
     private var opusFileName: String? = null
     private var opusPacketsFileName: String? = null
@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         isResumed = false
+        Preferences.getContext = { this }
         super.onCreate(savedInstanceState)
 
         bluetoothDevice = intent.parcelable("android.bluetooth.BluetoothDevice")
@@ -117,7 +118,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         binding.navView?.let {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
-                    R.id.nav_music, R.id.nav_play, R.id.nav_learn, R.id.nav_settings, R.id.nav_bt_settings
+                    R.id.nav_music, R.id.nav_play, R.id.nav_learn, R.id.nav_preferences, R.id.nav_bt_settings
                 ),
                 binding.drawerLayout
             )
@@ -186,6 +187,8 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         stopService(Intent(this, SerialService::class.java))
         try { unbindService(this) } catch (ignored: Exception) {}
         super.onDestroy()
+        if (Preferences.getContext() == this)
+            Preferences.getContext = { null }
     }
 
     override fun onServiceConnected(name: ComponentName, binder: IBinder) {
@@ -266,9 +269,9 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
                 intent.action = android.provider.Settings.ACTION_BLUETOOTH_SETTINGS
                 startActivity(intent)
             }
-            R.id.nav_settings -> {
+            R.id.nav_preferences -> {
                 val navController = findNavController(R.id.nav_host_fragment_content_main)
-                navController.navigate(R.id.nav_settings)
+                navController.navigate(R.id.nav_preferences)
             }
         }
         return super.onOptionsItemSelected(item)
@@ -309,7 +312,9 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
 
     // Returns true if a new upload was started.
     private fun startSerialUpload(firstDirectory: String): Boolean {
-        val `1kThreshold` = Constants.DEFAULT_XMODEM_1K_THRESHOLD
+        val `1kThreshold`: Int = Preferences[R.string.xmodem_1k_threshold_key]
+        val useCrc: Boolean = Preferences[R.string.xmodem_use_crc_key]
+
         val fileName = (if (opusFileName != null) {
             val name = opusFileName; opusFileName = null; name
         } else {
@@ -321,7 +326,12 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         // We can't default to 1K because we can't guarantee that the receiver will know how to handle it.
 
         // Permit 1K.  This will fallback to vanilla if they use NAK.
-        val flavor = if (File(filePath).length() >= `1kThreshold`) XmodemSession.Flavor.X_1K else XmodemSession.Flavor.CRC
+        val flavor = if (File(filePath).length() >= `1kThreshold`)
+            XmodemSession.Flavor.X_1K
+        else if (useCrc)
+            XmodemSession.Flavor.CRC
+        else
+            XmodemSession.Flavor.VANILLA
         // Open only the first file and send it.
         val sx = XmodemSender(flavor,
             object: InputStream() {
@@ -342,6 +352,8 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     }
 
     private fun setupSerialUpload(session: SerialFileTransferSession, firstDirectory: String, fileName: String, cb: KFunction1<String, Boolean>) {
+        val timeout: Int = Preferences[R.string.bluetooth_command_timeout_key]
+
         var snackBar: Snackbar? = null
         var progressBar: ProgressBar? = null
         binding.appBarMain.fab?.post {
@@ -356,9 +368,9 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
 
         coroutineScope.launch {
             serialIsBlocking = true
-            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
+            delay(timeout.toDuration(DurationUnit.MILLISECONDS))
             service!!.write("rm /littlefs/${currentFragment.viewModel.littleFsPath}/$firstDirectory/$fileName\n".toByteArray())
-            delay(Constants.DEFAULT_BLUETOOTH_COMMAND_TIMEOUT.toDuration(DurationUnit.MILLISECONDS))
+            delay(timeout.toDuration(DurationUnit.MILLISECONDS))
             service!!.write("rx /littlefs/${currentFragment.viewModel.littleFsPath}/$firstDirectory/$fileName\n".toByteArray())
             serialQueue.clear()
 

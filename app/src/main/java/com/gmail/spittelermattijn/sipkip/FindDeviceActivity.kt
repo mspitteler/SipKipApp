@@ -34,6 +34,7 @@ class FindDeviceActivity : AppCompatActivity() {
     private val bondedBluetoothDevices: ArrayList<BluetoothDevice?> = ArrayList()
     private lateinit var requestBluetoothPermissionLauncherForRefresh: ActivityResultLauncher<Array<String>>
     private var hasPermissions = false
+    private lateinit var deviceName: String
     private var bondedBluetoothDevice: BluetoothDevice? = null
         @SuppressLint("MissingPermission")
         set(device) {
@@ -66,6 +67,26 @@ class FindDeviceActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Preferences.getContext = { this }
+        val frameSize: Float = Preferences[R.string.encoder_frame_size_key]
+        println("frameSize: $frameSize")
+        val timeout: Int = Preferences[R.string.bluetooth_command_timeout_key]
+        println("timeout: $timeout")
+        val longTimeout: Int = Preferences[R.string.bluetooth_command_long_timeout_key]
+        println("longTimeout: $longTimeout")
+        deviceName = Preferences[R.string.bluetooth_device_name_key]
+        println("deviceName: $deviceName")
+        val `1kThreshold`: Int = Preferences[R.string.xmodem_1k_threshold_key]
+        println("1kThreshold: $`1kThreshold`")
+        val useCrc: Boolean = Preferences[R.string.xmodem_use_crc_key]
+        println("useCrc: $useCrc")
+        val sampleRate: Int = Preferences[R.string.encoder_sample_rate_key]
+        println("sampleRate: $sampleRate")
+        val bitrate: Int = Preferences[R.string.encoder_bitrate_key]
+        println("bitrate: $bitrate")
+        val stereo: Boolean = Preferences[R.string.encoder_stereo_key]
+        println("stereo: $stereo")
+
         super.onCreate(savedInstanceState)
         // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
         val settingsActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
@@ -102,7 +123,7 @@ class FindDeviceActivity : AppCompatActivity() {
         if (binding.navView != null) {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
-                    R.id.nav_find_device, R.id.nav_settings, R.id.nav_bt_settings
+                    R.id.nav_find_device, R.id.nav_preferences, R.id.nav_bt_settings
                 ),
                 binding.drawerLayout
             )
@@ -113,6 +134,13 @@ class FindDeviceActivity : AppCompatActivity() {
         }
 
         refresh()
+        Preferences.registerOnChangeListener { key, `val` ->
+            if (key == R.string.bluetooth_device_name_key) {
+                // TODO: Do this a more elegant way.
+                startActivity( Intent(this, FindDeviceActivity::class.java))
+                finish()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -135,9 +163,9 @@ class FindDeviceActivity : AppCompatActivity() {
                 intent.action = android.provider.Settings.ACTION_BLUETOOTH_SETTINGS
                 startActivity(intent)
             }
-            R.id.nav_settings -> {
+            R.id.nav_preferences -> {
                 val navController = findNavController(R.id.nav_host_fragment_content_find_device)
-                navController.navigate(R.id.nav_settings)
+                navController.navigate(R.id.nav_preferences)
             }
         }
         return super.onOptionsItemSelected(item)
@@ -157,6 +185,8 @@ class FindDeviceActivity : AppCompatActivity() {
             bluetoothAdapter.isDiscovering)
             bluetoothAdapter.cancelDiscovery()
         super.onDestroy()
+        if (Preferences.getContext() == this)
+            Preferences.getContext = { null }
     }
 
     @SuppressLint("MissingPermission")
@@ -168,7 +198,7 @@ class FindDeviceActivity : AppCompatActivity() {
             for (device in bluetoothAdapter.bondedDevices)
                 if (device.type != BluetoothDevice.DEVICE_TYPE_LE) bondedBluetoothDevices.add(device)
             bondedBluetoothDevices.sortWith{ a: BluetoothDevice?, b: BluetoothDevice? -> BluetoothUtil.compareTo(a!!, b!!) }
-            bondedBluetoothDevice = bondedBluetoothDevices.find { device -> device?.name == Constants.DEFAULT_BLUETOOTH_DEVICE_NAME }
+            bondedBluetoothDevice = bondedBluetoothDevices.find { device -> device?.name == deviceName }
 
             // If we haven't connected before, try to discover it.
             if (bondedBluetoothDevice == null) {
@@ -192,7 +222,7 @@ class FindDeviceActivity : AppCompatActivity() {
                     // Discovery has found a device. Get the BluetoothDevice
                     // object and its info from the Intent.
                     val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
-                    if (device.name == Constants.DEFAULT_BLUETOOTH_DEVICE_NAME) {
+                    if (device.name == deviceName) {
                         device.createBond()
                         foundDevice = true
                         if (bluetoothAdapter.isDiscovering)
@@ -201,7 +231,7 @@ class FindDeviceActivity : AppCompatActivity() {
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
                     val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
-                    if (device.name == Constants.DEFAULT_BLUETOOTH_DEVICE_NAME)
+                    if (device.name == deviceName)
                         bluetoothDevice = bluetoothAdapter.getRemoteDevice(device.address)
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED ->

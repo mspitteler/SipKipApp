@@ -6,12 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.navArgs
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentPlayBinding
-import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
+import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 
-class PlayFragment : FragmentBase() {
+class PlayFragment : Fragment(), FragmentInterface {
     override lateinit var viewModel: PlayViewModel
     private lateinit var bluetoothDevice: BluetoothDevice
 

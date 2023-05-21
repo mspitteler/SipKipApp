@@ -5,7 +5,6 @@ import androidx.annotation.DrawableRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.gmail.spittelermattijn.sipkip.CommandUtil
-import com.gmail.spittelermattijn.sipkip.Constants
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
@@ -30,7 +29,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
     private val exploredPaths: ArrayList<File> = ArrayList()
-    private val promptRegex = """\d+@${Constants.DEFAULT_BLUETOOTH_DEVICE_NAME} > \s*""".toRegex()
+    private val promptRegex = """\d+@SipKip > \s*""".toRegex()
 
     data class Item(@DrawableRes val drawable: Int, val displayPath: String, val fullPath: String)
 

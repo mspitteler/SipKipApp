@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/preference_screen">
+    <PreferenceCategory
+        android:title="@string/category_device_preferences"
+        android:icon="@drawable/ic_bt_settings_text_color_24dp">
+
+        <EditTextPreference
+            android:key="@string/bluetooth_device_name_key"
+            android:defaultValue="@string/default_bluetooth_device_name"
+            android:title="@string/preference_title_bluetooth_device_name"
+            app:useSimpleSummaryProvider="true"/>
+
+        <SeekBarPreference
+            android:key="@string/bluetooth_command_timeout_key"
+            app:min="@integer/bluetooth_command_timeout_min"
+            android:max="@integer/bluetooth_command_timeout_max"
+            android:defaultValue="@integer/default_bluetooth_command_timeout"
+            android:title="@string/preference_title_bluetooth_command_timeout"
+            app:showSeekBarValue="true"
+            android:summary="@string/preference_summary_bluetooth_command_timeout"/>
+
+        <SeekBarPreference
+            android:key="@string/bluetooth_command_long_timeout_key"
+            app:min="@integer/bluetooth_command_long_timeout_min"
+            android:max="@integer/bluetooth_command_long_timeout_max"
+            android:defaultValue="@integer/default_bluetooth_command_long_timeout"
+            android:title="@string/preference_title_bluetooth_command_long_timeout"
+            app:showSeekBarValue="true"
+            android:summary="@string/preference_summary_bluetooth_command_long_timeout"/>
+
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/category_xmodem_preferences"
+        android:icon="@drawable/ic_upload_text_color_24dp">
+
+        <ListPreference
+            android:key="@string/xmodem_1k_threshold_key"
+            android:defaultValue="@integer/default_xmodem_1k_threshold"
+            android:entries="@array/xmodem_1k_threshold_entries"
+            android:entryValues="@array/xmodem_1k_threshold_entry_values"
+            android:title="@string/preference_title_xmodem_1k_threshold"
+            app:useSimpleSummaryProvider="true"/>
+
+        <SwitchPreference
+            android:key="@string/xmodem_use_crc_key"
+            android:defaultValue="@bool/default_xmodem_use_crc"
+            android:title="@string/preference_title_xmodem_use_crc"
+            android:summaryOn="@string/preference_summary_on_xmodem_use_crc"
+            android:summaryOff="@string/preference_summary_off_xmodem_use_crc"/>
+
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/category_opus_preferences"
+        android:icon="@drawable/ic_opus_text_color_24dp">
+
+        <ListPreference
+            android:key="@string/encoder_sample_rate_key"
+            android:defaultValue="@integer/default_encoder_sample_rate"
+            android:entries="@array/encoder_sample_rate_entries"
+            android:entryValues="@array/encoder_sample_rate_entry_values"
+            android:title="@string/preference_title_encoder_sample_rate"
+            app:useSimpleSummaryProvider="true"/>
+
+        <SwitchPreference
+            android:key="@string/encoder_stereo_key"
+            android:defaultValue="@bool/default_encoder_stereo"
+            android:title="@string/preference_title_encoder_use_stereo"
+            android:summaryOn="@string/preference_summary_on_encoder_stereo"
+            android:summaryOff="@string/preference_summary_off_encoder_stereo"/>
+
+        <ListPreference
+            android:key="@string/encoder_bitrate_key"
+            android:defaultValue="@integer/default_encoder_bitrate"
+            android:entries="@array/encoder_bitrate_entries"
+            android:entryValues="@array/encoder_bitrate_entry_values"
+            android:title="@string/preference_title_encoder_bitrate"
+            app:useSimpleSummaryProvider="true"/>
+
+        <ListPreference
+            android:key="@string/encoder_frame_size_key"
+            android:defaultValue="@dimen/default_encoder_frame_size"
+            android:entries="@array/encoder_frame_size_entries"
+            android:entryValues="@array/encoder_frame_size_entry_values"
+            android:title="@string/preference_title_encoder_frame_size"
+            app:useSimpleSummaryProvider="true"/>
+
+    </PreferenceCategory>
+</PreferenceScreen>

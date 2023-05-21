@@ -14,6 +14,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.findFragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.navArgs
@@ -26,7 +27,7 @@ import com.gmail.spittelermattijn.sipkip.databinding.FragmentMusicBinding
 import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
 import com.gmail.spittelermattijn.sipkip.showFirstDirectoryPicker
 import com.gmail.spittelermattijn.sipkip.showRenameEditText
-import com.gmail.spittelermattijn.sipkip.ui.FragmentBase
+import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
@@ -37,7 +38,7 @@ import kotlinx.coroutines.launch
  * the [RecyclerView] using LinearLayoutManager in a small screen
  * and shows items using GridLayoutManager in a large screen.
  */
-class MusicFragment : FragmentBase() {
+class MusicFragment : Fragment(), FragmentInterface {
     override lateinit var viewModel: MusicViewModel
     private lateinit var bluetoothDevice: BluetoothDevice
 

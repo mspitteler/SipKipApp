@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string translatable="false" name="default_bluetooth_device_name">SipKip</string>
+    <integer name="default_bluetooth_command_timeout">500</integer>
+    <integer name="default_bluetooth_command_long_timeout">5000</integer>
+    <integer name="default_xmodem_1k_threshold">8192</integer>
+    <bool name="default_xmodem_use_crc">true</bool>
+    <integer name="default_encoder_sample_rate">48000</integer>
+    <bool name="default_encoder_stereo">false</bool>
+    <integer name="default_encoder_bitrate">16000</integer>
+    <dimen name="default_encoder_frame_size" format="float">60.0</dimen>
+</resources>
