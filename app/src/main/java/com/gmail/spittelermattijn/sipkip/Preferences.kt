@@ -6,6 +6,8 @@ import android.graphics.Color
 import androidx.annotation.AnyRes
 import androidx.annotation.StringRes
 import androidx.preference.PreferenceManager
+import com.gmail.spittelermattijn.sipkip.util.getAny
+import com.gmail.spittelermattijn.sipkip.util.toComparable
 
 object Preferences {
     var getContext: (() -> Context?) = { null }

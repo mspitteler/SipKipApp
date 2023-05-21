@@ -25,8 +25,8 @@ import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentMusicBinding
 import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
-import com.gmail.spittelermattijn.sipkip.showFirstDirectoryPicker
-import com.gmail.spittelermattijn.sipkip.showRenameEditText
+import com.gmail.spittelermattijn.sipkip.util.showFirstDirectoryPicker
+import com.gmail.spittelermattijn.sipkip.util.showRenameEditText
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
