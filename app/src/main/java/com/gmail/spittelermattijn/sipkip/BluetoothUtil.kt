@@ -24,21 +24,6 @@ object BluetoothUtil {
         arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN)
 
     /**
-     * sort by name, then address. sort named devices first
-     */
-    @SuppressLint("MissingPermission")
-    fun compareTo(a: BluetoothDevice, b: BluetoothDevice): Int {
-        val aValid = a.name?.isNotEmpty() ?: false
-        val bValid = b.name?.isNotEmpty() ?: false
-        if (aValid && bValid) {
-            val ret = a.name.compareTo(b.name)
-            return if (ret != 0) ret else a.address.compareTo(b.address)
-        }
-        if (aValid) return -1
-        return if (bValid) +1 else a.address.compareTo(b.address)
-    }
-
-    /**
      * Android 12 permission handling
      */
     private fun showRationaleDialog(activity: Activity, listener: DialogInterface.OnClickListener) {

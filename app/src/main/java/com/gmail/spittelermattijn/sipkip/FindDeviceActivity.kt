@@ -23,6 +23,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityFindDeviceBinding
+import com.gmail.spittelermattijn.sipkip.util.compareTo
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
@@ -32,7 +33,7 @@ class FindDeviceActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFindDeviceBinding
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
-    private val bondedBluetoothDevices: ArrayList<BluetoothDevice?> = ArrayList()
+    private val bondedBluetoothDevices: ArrayList<BluetoothDevice> = ArrayList()
     private lateinit var requestBluetoothPermissionLauncherForRefresh: ActivityResultLauncher<Array<String>>
     private var hasPermissions = false
     private lateinit var deviceName: String
@@ -197,8 +198,8 @@ class FindDeviceActivity : AppCompatActivity() {
         if (hasPermissions) {
             for (device in bluetoothAdapter.bondedDevices)
                 if (device.type != BluetoothDevice.DEVICE_TYPE_LE) bondedBluetoothDevices.add(device)
-            bondedBluetoothDevices.sortWith{ a: BluetoothDevice?, b: BluetoothDevice? -> BluetoothUtil.compareTo(a!!, b!!) }
-            bondedBluetoothDevice = bondedBluetoothDevices.find { device -> device?.name == deviceName }
+            bondedBluetoothDevices.sortWith { a, b -> a.compareTo(b) }
+            bondedBluetoothDevice = bondedBluetoothDevices.find { device -> device.name == deviceName }
 
             // If we haven't connected before, try to discover it.
             if (bondedBluetoothDevice == null) {
