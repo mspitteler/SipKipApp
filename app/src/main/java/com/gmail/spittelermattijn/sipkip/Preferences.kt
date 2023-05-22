@@ -37,7 +37,7 @@ object Preferences {
         val resourceTypeMap = mapOf(String::class to "string", Boolean::class to "bool", Float::class to "dimen", Int::class to "integer", Color::class to "color")
 
         @SuppressLint("DiscouragedApi") @AnyRes val id = context.resources.getIdentifier("default_$keyString", resourceTypeMap[T::class], context.packageName)
-        return preferences.all[keyString]?.let { if (it is String) it.toComparable<T>() else it } as T? ?: context.resources.getAny(id)
+        return preferences.all[keyString]?.let { if (it is String) it.toComparable() else (it as T) } ?: context.resources.getAny(id)
     }
 
     fun registerOnChangeListener(listener: (Int, Any) -> Unit) {
