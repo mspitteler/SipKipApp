@@ -6,10 +6,9 @@ import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceFragmentCompat
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
-import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
 
 class PreferenceFragment : PreferenceFragmentCompat(), FragmentInterface {
-    override lateinit var viewModel: ViewModelBase
+    override lateinit var viewModel: PreferenceViewModel
     override val args by navArgs<PreferenceFragmentArgs>()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
