@@ -113,7 +113,6 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         navHostFragment.view?.visibility = View.GONE
         val navController = navHostFragment.navController
         // Do this programmatically, since we want to pass arguments.
-        navController.setGraph(R.navigation.mobile_navigation_main)
         navController.addOnDestinationChangedListener { controller, destination, arguments ->
             arguments?.putParcelable("bluetoothDevice", bluetoothDevice)
         }
