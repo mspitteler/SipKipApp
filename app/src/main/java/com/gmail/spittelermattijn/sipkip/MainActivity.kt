@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         isResumed = false
-        Preferences.getContext = { this }
+        Preferences.addContextGetter { this }
         super.onCreate(savedInstanceState)
 
         bluetoothDevice = intent.parcelable("android.bluetooth.BluetoothDevice")
@@ -190,8 +190,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         stopService(Intent(this, SerialService::class.java))
         try { unbindService(this) } catch (ignored: Exception) {}
         super.onDestroy()
-        if (Preferences.getContext() == this)
-            Preferences.getContext = { null }
+        Preferences.removeContextGetter(this)
     }
 
     override fun onServiceConnected(name: ComponentName, binder: IBinder) {

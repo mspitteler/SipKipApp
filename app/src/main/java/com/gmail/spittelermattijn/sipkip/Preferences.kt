@@ -2,6 +2,7 @@ package com.gmail.spittelermattijn.sipkip
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.graphics.Color
 import androidx.annotation.AnyRes
 import androidx.annotation.StringRes
@@ -10,12 +11,26 @@ import com.gmail.spittelermattijn.sipkip.util.getAny
 import com.gmail.spittelermattijn.sipkip.util.toComparable
 
 object Preferences {
-    var getContext: (() -> Context?) = { null }
-    private val listeners = ArrayList<(Int, Any) -> Unit>()
+    private val contextGetterList = ArrayList<() -> Context>()
+    private val listeners = HashMap<Context, ArrayList<OnSharedPreferenceChangeListener>>()
+    val topContextGetter get() = contextGetterList.last()
+
+    fun addContextGetter(get: () -> Context) {
+        contextGetterList.add(get)
+        listeners[get()] = ArrayList()
+    }
+
+    fun removeContextGetter(context: Context) {
+        contextGetterList.removeIf { it() == context }
+        listeners[context]!!.forEach {
+            PreferenceManager.getDefaultSharedPreferences(context).unregisterOnSharedPreferenceChangeListener(it)
+        }
+        listeners.remove(context)
+    }
 
     // Only String, Boolean, Float and Int are supported as return types.
     inline operator fun <reified T : Any> get(@StringRes key: Int): T {
-        val context = getContext()!!
+        val context = topContextGetter()
         val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val keyString = context.getString(key)
 
@@ -26,12 +41,13 @@ object Preferences {
     }
 
     fun registerOnChangeListener(listener: (Int, Any) -> Unit) {
-        listeners.add(listener)
-        val context = getContext()!!
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener { sharedPreferences, key ->
-            R.string::class.java.fields.filter { it.name.endsWith("_key") && context.getString(it.getInt(null)) == key }.forEach {
-                listener(it.getInt(null), sharedPreferences.all[key]!!)
-            }
+        val context = topContextGetter()
+        val onChangeListener = OnSharedPreferenceChangeListener { sharedPreferences, key ->
+            R.string::class.java.fields.filter {
+                it.name.endsWith("_key") && topContextGetter().getString(it.getInt(null)) == key
+            }.forEach { listener(it.getInt(null), sharedPreferences.all[key]!!) }
         }
+        listeners[context]!!.add(onChangeListener)
+        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(onChangeListener)
     }
 }

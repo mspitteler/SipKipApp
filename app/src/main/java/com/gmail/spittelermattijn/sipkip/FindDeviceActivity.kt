@@ -68,7 +68,7 @@ class FindDeviceActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Preferences.getContext = { this }
+        Preferences.addContextGetter { this }
         val frameSize: Float = Preferences[R.string.encoder_frame_size_key]
         println("frameSize: $frameSize")
         val timeout: Int = Preferences[R.string.bluetooth_command_timeout_key]
@@ -186,8 +186,7 @@ class FindDeviceActivity : AppCompatActivity() {
             bluetoothAdapter.isDiscovering)
             bluetoothAdapter.cancelDiscovery()
         super.onDestroy()
-        if (Preferences.getContext() == this)
-            Preferences.getContext = { null }
+        Preferences.removeContextGetter(this)
     }
 
     @SuppressLint("MissingPermission")
