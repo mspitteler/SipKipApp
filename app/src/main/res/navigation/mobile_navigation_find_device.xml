@@ -19,6 +19,6 @@
 
     <activity
         android:id="@+id/nav_bt_settings"
-        app:action="android.bluetooth.devicepicker.action.LAUNCH" />
+        app:action="android.settings.BLUETOOTH_SETTINGS" />
 
 </navigation>
