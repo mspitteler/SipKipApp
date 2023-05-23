@@ -1,4 +1,4 @@
-package com.gmail.spittelermattijn.sipkip
+package com.gmail.spittelermattijn.sipkip.serial
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import com.gmail.spittelermattijn.sipkip.Constants
+import com.gmail.spittelermattijn.sipkip.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID

@@ -1,5 +1,7 @@
-package com.gmail.spittelermattijn.sipkip
+package com.gmail.spittelermattijn.sipkip.serial
 
+import com.gmail.spittelermattijn.sipkip.Preferences
+import com.gmail.spittelermattijn.sipkip.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

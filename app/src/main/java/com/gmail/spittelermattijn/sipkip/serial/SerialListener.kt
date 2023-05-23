@@ -1,4 +1,4 @@
-package com.gmail.spittelermattijn.sipkip
+package com.gmail.spittelermattijn.sipkip.serial
 
 interface SerialListener {
     fun onSerialConnect()

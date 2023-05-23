@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.gmail.spittelermattijn.sipkip.SerialCommand
+import com.gmail.spittelermattijn.sipkip.serial.SerialCommand
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase

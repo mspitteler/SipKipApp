@@ -1,12 +1,18 @@
-package com.gmail.spittelermattijn.sipkip
+package com.gmail.spittelermattijn.sipkip.serial
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
-import android.os.*
+import android.os.Binder
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
+import com.gmail.spittelermattijn.sipkip.Constants
+import com.gmail.spittelermattijn.sipkip.R
 
 /**
  * create notification and queue serial data while activity is not in the foreground

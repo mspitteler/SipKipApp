@@ -23,6 +23,9 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
+import com.gmail.spittelermattijn.sipkip.serial.SerialListener
+import com.gmail.spittelermattijn.sipkip.serial.SerialService
+import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.gmail.spittelermattijn.sipkip.util.queryName
