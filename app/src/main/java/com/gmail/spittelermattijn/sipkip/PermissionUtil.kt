@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
-import android.bluetooth.BluetoothDevice
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -15,7 +14,7 @@ import androidx.activity.result.ActivityResultLauncher
 import kotlin.reflect.KFunction0
 
 
-object BluetoothUtil {
+object PermissionUtil {
     private val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
         arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH)
     else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R)

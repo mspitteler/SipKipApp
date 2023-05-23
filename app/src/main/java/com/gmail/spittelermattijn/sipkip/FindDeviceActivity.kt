@@ -94,7 +94,7 @@ class FindDeviceActivity : AppCompatActivity() {
         val settingsActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-            BluetoothUtil.onSettingsActivityResult(this)
+            PermissionUtil.onSettingsActivityResult(this)
             refresh()
         }
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -102,7 +102,7 @@ class FindDeviceActivity : AppCompatActivity() {
         requestBluetoothPermissionLauncherForRefresh = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { granted: Map<String, Boolean>? ->
-            BluetoothUtil.onPermissionsResult(this, granted!!, this::refresh, settingsActivityResultLauncher)
+            PermissionUtil.onPermissionsResult(this, granted!!, this::refresh, settingsActivityResultLauncher)
         }
 
         // Register for broadcasts when a device is discovered.
@@ -183,7 +183,7 @@ class FindDeviceActivity : AppCompatActivity() {
         // Don't forget to unregister the ACTION_FOUND receiver.
         unregisterReceiver(receiver)
 
-        if (BluetoothUtil.permissionsGranted(this) &&
+        if (PermissionUtil.permissionsGranted(this) &&
             bluetoothAdapter.isDiscovering)
             bluetoothAdapter.cancelDiscovery()
         super.onDestroy()
@@ -193,7 +193,7 @@ class FindDeviceActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun refresh() {
         bondedBluetoothDevices.clear()
-        hasPermissions = BluetoothUtil.hasPermissions(this, requestBluetoothPermissionLauncherForRefresh)
+        hasPermissions = PermissionUtil.hasPermissions(this, requestBluetoothPermissionLauncherForRefresh)
         // The code in this if statement should only be executed once, no matter what the user does while granting permissions.
         if (hasPermissions) {
             for (device in bluetoothAdapter.bondedDevices)
