@@ -71,6 +71,12 @@ class MusicFragment : Fragment(), FragmentInterface {
         return root
     }
 
+    override fun onPause() {
+        super.onPause()
+        val swipeRefreshLayout = binding.swipeRefreshLayoutMusic
+        swipeRefreshLayout.isRefreshing = false
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

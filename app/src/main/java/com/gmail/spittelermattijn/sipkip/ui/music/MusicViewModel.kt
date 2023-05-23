@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.gmail.spittelermattijn.sipkip.CommandUtil
+import com.gmail.spittelermattijn.sipkip.SerialCommand
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
@@ -20,7 +20,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
             coroutineScope.launch {
                 synchronized(getApplication<Application>().applicationContext) {
                     // Wait for first prompt by sending empty command.
-                    field?.let { CommandUtil.blockingCommand(it, "\n") }
+                    field?.let { SerialCommand(it, "\n").executeBlocking() }
                     update()
                 }
             }
@@ -38,7 +38,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
     private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
-        val results = CommandUtil.blockingCommand(cb, "ls /littlefs/$pathSlash\n")
+        val results = SerialCommand(cb, "ls /littlefs/$pathSlash\n").executeBlocking()
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
             for (line in result.split('\n').filter { !(it matches promptRegex) }) {
@@ -91,23 +91,23 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     }
 
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
-        val index = CommandUtil.addCommandExecutionResults(datas!!)
+        SerialCommand.executionInstance?.postExecutionResults(datas!!)
 
-        if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
-            CommandUtil.signalCommandExecutionResultsReceived(index)
+        if (datas!!.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
+            SerialCommand.executionInstance?.postAllExecutionResultsReceived()
     }
 
     fun removeItem(fullPath: String) {
         serialWriteCallback?.let {
-            CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus\n")
-            CommandUtil.blockingCommand(it, "rm /littlefs/$fullPath.opus_packets\n")
+            SerialCommand(it, "rm /littlefs/$fullPath.opus\n").executeBlocking()
+            SerialCommand(it, "rm /littlefs/$fullPath.opus_packets\n").executeBlocking()
         }
     }
 
     fun renameItem(fullPath: String, newFullPath: String) {
         serialWriteCallback?.let {
-            CommandUtil.blockingCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n", true)
-            CommandUtil.blockingCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n", true)
+            SerialCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n").executeBlocking(true)
+            SerialCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n").executeBlocking(true)
         }
     }
 
