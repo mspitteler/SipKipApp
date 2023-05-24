@@ -48,7 +48,7 @@ object PermissionUtil {
         val builder = AlertDialog.Builder(activity)
         builder.setTitle(activity.getString(R.string.bluetooth_permission_title))
         builder.setMessage(activity.getString(R.string.bluetooth_permission_denied, s))
-        builder.setNegativeButton(android.R.string.cancel) { dialog: DialogInterface?, which: Int ->
+        builder.setNegativeButton(android.R.string.cancel) { _, _ ->
             activity.finish()
         }
         @SuppressLint("DiscouragedApi") val id = activity.resources.getIdentifier(
@@ -56,7 +56,7 @@ object PermissionUtil {
             null,
             null
         )
-        builder.setPositiveButton(id) { dialog: DialogInterface?, which: Int ->
+        builder.setPositiveButton(id) { _, _ ->
             settingsActivityResultLauncher.launch(
                 Intent(
                     Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -90,7 +90,7 @@ object PermissionUtil {
         if (!granted.containsValue(false)) {
             cb()
         } else if (activity.shouldShowRequestPermissionRationale(permissions[0])) {
-            showRationaleDialog(activity) { dialog: DialogInterface?, which: Int -> cb() }
+            showRationaleDialog(activity) { _, _ -> cb() }
         } else {
             showSettingsDialog(activity, settingsActivityResultLauncher)
         }

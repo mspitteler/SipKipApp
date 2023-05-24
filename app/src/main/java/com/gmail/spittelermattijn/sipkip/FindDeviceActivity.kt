@@ -25,6 +25,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityFindDeviceBinding
 import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.util.compareTo
+import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
@@ -94,7 +95,7 @@ class FindDeviceActivity : AppCompatActivity() {
         // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
         val settingsActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
-        ) { result ->
+        ) {
             PermissionUtil.onSettingsActivityResult(this)
             refresh()
         }

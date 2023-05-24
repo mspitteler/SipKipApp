@@ -7,6 +7,7 @@ import android.media.MediaFormat
 import android.media.MediaExtractor
 import android.os.ParcelFileDescriptor
 import com.gmail.spittelermattijn.sipkip.opusjni.Opus
+import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.getByteToFloat
 import com.gmail.spittelermattijn.sipkip.util.getIntToFloat
 import com.gmail.spittelermattijn.sipkip.util.getShortToFloat

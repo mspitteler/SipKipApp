@@ -13,9 +13,9 @@ fun MaterialAlertDialogBuilder.showFirstDirectoryPicker(default: String? = null,
     var checkedItem = items.map { it.second }.indexOf(default)
     checkedItem = if (checkedItem == -1) 0 else checkedItem
     setTitle(R.string.dialog_pick_first_directory)
-        .setSingleChoiceItems(items.map { context.getString(it.first) }.toTypedArray(), checkedItem) { dialog, which -> checkedItem = which }
+        .setSingleChoiceItems(items.map { context.getString(it.first) }.toTypedArray(), checkedItem) { _, which -> checkedItem = which }
         .setNegativeButton(android.R.string.cancel, null)
-        .setPositiveButton(android.R.string.ok) { dialog, which -> cb(items[checkedItem].second) }
+        .setPositiveButton(android.R.string.ok) { _, _ -> cb(items[checkedItem].second) }
         .show()
 }
 
@@ -24,7 +24,7 @@ fun MaterialAlertDialogBuilder.showRenameEditText(default: String? = null, cb: (
     setTitle(R.string.dialog_enter_path)
         .setView(editText)
         .setNegativeButton(android.R.string.cancel, null)
-        .setPositiveButton(android.R.string.ok) { dialog, which ->
+        .setPositiveButton(android.R.string.ok) { _, _ ->
             val text = if (editText.text.isNullOrEmpty()) "default" else editText.text
             cb(text.replace("""\s""".toRegex(), "_"))
         }
@@ -34,9 +34,9 @@ fun MaterialAlertDialogBuilder.showRenameEditText(default: String? = null, cb: (
 fun MaterialAlertDialogBuilder.showNewOrPreviouslyUploadedPicker(newCb: () -> Unit, previouslyUploadedCb: () -> Unit) {
     val items = arrayOf(R.string.dialog_pick_new, R.string.dialog_pick_previously_uploaded)
     var checkedItem = 0
-    setSingleChoiceItems(items.map { context.getString(it) }.toTypedArray(), checkedItem) { dialog, which -> checkedItem = which }
+    setSingleChoiceItems(items.map { context.getString(it) }.toTypedArray(), checkedItem) { _, which -> checkedItem = which }
         .setNegativeButton(android.R.string.cancel, null)
-        .setPositiveButton(android.R.string.ok) { dialog, which ->
+        .setPositiveButton(android.R.string.ok) { _, _ ->
             when (checkedItem) {
                 0 -> newCb()
                 1 -> previouslyUploadedCb()

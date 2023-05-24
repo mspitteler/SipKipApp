@@ -1,6 +1,5 @@
 package com.gmail.spittelermattijn.sipkip
 
-import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
 import android.content.Context
@@ -28,6 +27,7 @@ import com.gmail.spittelermattijn.sipkip.serial.SerialListener
 import com.gmail.spittelermattijn.sipkip.serial.SerialService
 import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
+import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.gmail.spittelermattijn.sipkip.util.queryName
@@ -130,7 +130,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             }
         }
 
-        binding.appBarMain.fab?.setOnClickListener { view ->
+        binding.appBarMain.fab?.setOnClickListener { _ ->
             val newCb = { filePickerActivityResultLauncher.launch("audio/*") }
             if (filesDir.listFiles()?.map { it.name }?.filterValidOpusPaths().isNullOrEmpty()) {
                 newCb()
@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         navHostFragment.view?.visibility = View.GONE
         val navController = navHostFragment.navController
         // Do this programmatically, since we want to pass arguments.
-        navController.addOnDestinationChangedListener { controller, destination, arguments ->
+        navController.addOnDestinationChangedListener { _, _, arguments ->
             arguments?.putParcelable("bluetoothDevice", bluetoothDevice)
         }
 

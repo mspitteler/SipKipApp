@@ -9,7 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import com.gmail.spittelermattijn.sipkip.Constants
-import com.gmail.spittelermattijn.sipkip.coroutineScope
+import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
