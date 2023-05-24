@@ -7,8 +7,8 @@
 
     <ImageView
         android:id="@+id/image_view_item_music"
-        android:layout_width="@dimen/item_music_image_length"
-        android:layout_height="@dimen/item_music_image_length"
+        android:layout_width="@dimen/item_image_length"
+        android:layout_height="@dimen/item_image_length"
         android:layout_margin="8dp"
         android:contentDescription="@string/image_view_item_music_content_description"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -20,7 +20,7 @@
     <TextView
         android:id="@+id/text_view_item_music"
         android:layout_width="0dp"
-        android:layout_marginStart="@dimen/item_music_text_view_margin_start"
+        android:layout_marginStart="@dimen/item_text_view_margin_start"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toStartOf="@id/card_view_item_music"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,6 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:contentDescription="@string/image_view_item_music_content_description"
             android:src="@drawable/ic_three_dot_menu_24dp" />
     </com.google.android.material.card.MaterialCardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

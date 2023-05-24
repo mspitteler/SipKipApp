@@ -49,6 +49,12 @@
             android:theme="@style/Theme.SipKip.NoActionBar">
         </activity>
         <activity
+            android:name=".PreviouslyUploadedActivity"
+            android:exported="false"
+            android:resizeableActivity="true"
+            android:theme="@style/Theme.SipKip.NoActionBar">
+        </activity>
+        <activity
             android:name=".FindDeviceActivity"
             android:exported="true"
             android:resizeableActivity="true"

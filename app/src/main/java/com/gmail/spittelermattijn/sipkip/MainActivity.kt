@@ -1,5 +1,6 @@
 package com.gmail.spittelermattijn.sipkip
 
+import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
 import android.content.Context
@@ -27,9 +28,11 @@ import com.gmail.spittelermattijn.sipkip.serial.SerialListener
 import com.gmail.spittelermattijn.sipkip.serial.SerialService
 import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
+import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.gmail.spittelermattijn.sipkip.util.queryName
 import com.gmail.spittelermattijn.sipkip.util.showFirstDirectoryPicker
+import com.gmail.spittelermattijn.sipkip.util.showNewOrPreviouslyUploadedPicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -55,6 +58,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     private lateinit var filePickerActivityResultLauncher: ActivityResultLauncher<String>
+    private lateinit var previouslyUploadedActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bluetoothDevice: BluetoothDevice
     private val currentFragment: FragmentInterface
@@ -94,6 +98,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             if (uri != null) {
                 getContentFd = contentResolver.openFileDescriptor(uri, "r")
                 val getContentFileName = contentResolver.queryName(uri).replace("""\s""".toRegex(), "_")
+                println("Picked filename: $getContentFileName")
                 opusFileName = "$getContentFileName.opus"
                 opusPacketsFileName = "$getContentFileName.opus_packets"
                 val opusOutput = openFileOutput(opusFileName, Context.MODE_PRIVATE)
@@ -109,7 +114,32 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             }
         }
 
-        binding.appBarMain.fab?.setOnClickListener { view -> filePickerActivityResultLauncher.launch("audio/*") }
+        previouslyUploadedActivityResultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            val itemPath = result.data?.dataString
+            if (itemPath != null) {
+                println("Picked filename: $itemPath")
+                opusFileName = "$itemPath.opus"
+                opusPacketsFileName = "$itemPath.opus_packets"
+                MaterialAlertDialogBuilder(this).showFirstDirectoryPicker { startSerialUpload(it) }
+            } else {
+                binding.appBarMain.fab?.let {
+                    Snackbar.make(it, R.string.snackbar_no_file_picked, Snackbar.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        binding.appBarMain.fab?.setOnClickListener { view ->
+            val newCb = { filePickerActivityResultLauncher.launch("audio/*") }
+            if (filesDir.listFiles()?.map { it.name }?.filterValidOpusPaths().isNullOrEmpty()) {
+                newCb()
+            } else {
+                MaterialAlertDialogBuilder(this).showNewOrPreviouslyUploadedPicker(newCb) {
+                    previouslyUploadedActivityResultLauncher.launch(Intent(this, PreviouslyUploadedActivity::class.java))
+                }
+            }
+        }
 
         navHostFragment =
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!

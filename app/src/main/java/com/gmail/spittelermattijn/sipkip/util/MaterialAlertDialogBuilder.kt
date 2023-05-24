@@ -30,3 +30,17 @@ fun MaterialAlertDialogBuilder.showRenameEditText(default: String? = null, cb: (
         }
         .show()
 }
+
+fun MaterialAlertDialogBuilder.showNewOrPreviouslyUploadedPicker(newCb: () -> Unit, previouslyUploadedCb: () -> Unit) {
+    val items = arrayOf(R.string.dialog_pick_new, R.string.dialog_pick_previously_uploaded)
+    var checkedItem = 0
+    setSingleChoiceItems(items.map { context.getString(it) }.toTypedArray(), checkedItem) { dialog, which -> checkedItem = which }
+        .setNegativeButton(android.R.string.cancel, null)
+        .setPositiveButton(android.R.string.ok) { dialog, which ->
+            when (checkedItem) {
+                0 -> newCb()
+                1 -> previouslyUploadedCb()
+            }
+        }
+        .show()
+}

@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <dimen name="item_music_image_length">160dp</dimen>
+    <dimen name="item_image_length">160dp</dimen>
     <dimen name="item_music_card_view_length" tools:ignore="MissingDefaultResource">36dp</dimen>
-    <dimen name="item_music_text_view_margin_start" tools:ignore="MissingDefaultResource">18dp</dimen>
+    <dimen name="item_text_view_margin_start" tools:ignore="MissingDefaultResource">18dp</dimen>
 </resources>

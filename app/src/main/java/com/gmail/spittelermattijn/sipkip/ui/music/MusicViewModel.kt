@@ -8,6 +8,7 @@ import com.gmail.spittelermattijn.sipkip.serial.SerialCommand
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
+import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import kotlinx.coroutines.launch
 import kotlin.reflect.KFunction1
 
@@ -33,8 +34,8 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
     data class Item(@DrawableRes val drawable: Int, val displayPath: String, val fullPath: String)
 
-    private val _texts: MutableLiveData<List<Item>> = MutableLiveData()
-    val texts: LiveData<List<Item>> = _texts
+    private val _items: MutableLiveData<List<Item>> = MutableLiveData()
+    val items: LiveData<List<Item>> = _items
 
     private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
@@ -64,19 +65,10 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     }
 
     private fun updateLiveData() {
-        val paths = exploredPaths.filter { it.type == FileType.File } // Only display regular files.
-        val opusPaths: ArrayList<String> = ArrayList()
-        for (path in paths) {
-            if (path.name matches """.+\.opus""".toRegex(RegexOption.IGNORE_CASE)) {
-                // Do this substring dance, because then we preserve the case insensitivity of the Opus file extension.
-                val pathWithoutExtension = path.name.substring(0 until path.name.length - ".opus".length)
-                if (paths.any { it.name matches """.+\.opus_packets""".toRegex(RegexOption.IGNORE_CASE) &&
-                            it.name.substring(0 until it.name.length - ".opus_packets".length) == pathWithoutExtension })
-                    opusPaths.add(pathWithoutExtension)
-            }
-        }
+        // Only display regular files.
+        val opusPaths = exploredPaths.filter { it.type == FileType.File }.map { it.name }.filterValidOpusPaths()
 
-        _texts.postValue(opusPaths.indices.mapIndexed { _, i ->
+        _items.postValue(opusPaths.indices.mapIndexed { _, i ->
             val path = opusPaths[i].removePrefix(littleFsPath)
             val firstDirectory = path.split('/').first { it.isNotEmpty() }
             Item(when (firstDirectory) {

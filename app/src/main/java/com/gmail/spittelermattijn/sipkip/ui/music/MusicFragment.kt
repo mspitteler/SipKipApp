@@ -58,7 +58,7 @@ class MusicFragment : Fragment(), FragmentInterface {
         val recyclerView = binding.recyclerviewMusic
         val adapter = MusicAdapter()
         recyclerView.adapter = adapter
-        viewModel.texts.observe(viewLifecycleOwner) { adapter.submitList(it) }
+        viewModel.items.observe(viewLifecycleOwner) { adapter.submitList(it) }
 
         val swipeRefreshLayout = binding.swipeRefreshLayoutMusic
         swipeRefreshLayout.setOnRefreshListener {

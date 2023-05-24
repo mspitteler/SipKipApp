@@ -65,4 +65,7 @@
     <string name="preference_summary_off_xmodem_use_crc">Use a checksum for the 128 byte packet XMODEM protocol.</string>
     <string name="preference_summary_on_encoder_stereo">Encode to 2 channel opus (only for testing purposes).</string>
     <string name="preference_summary_off_encoder_stereo">Encode to 1 channel opus.</string>
+    <string name="dialog_pick_new">Pick new file to upload</string>
+    <string name="dialog_pick_previously_uploaded">Pick previously uploaded file</string>
+    <string name="image_view_item_previously_uploaded_content_description">Represents an image view in the item</string>
 </resources>
