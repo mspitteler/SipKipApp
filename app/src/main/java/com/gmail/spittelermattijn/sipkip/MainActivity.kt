@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
@@ -27,6 +28,8 @@ import com.gmail.spittelermattijn.sipkip.serial.SerialListener
 import com.gmail.spittelermattijn.sipkip.serial.SerialService
 import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
+import com.gmail.spittelermattijn.sipkip.util.audioUri
+import com.gmail.spittelermattijn.sipkip.util.ACTION_MUSIC_PLAYER
 import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import com.gmail.spittelermattijn.sipkip.util.parcelable
@@ -85,7 +88,16 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         Preferences.addContextGetter { this }
         super.onCreate(savedInstanceState)
 
+        val shared = intent.action == Intent.ACTION_SEND || intent.action == Intent.ACTION_VIEW || intent.action == Intent().ACTION_MUSIC_PLAYER
+
+        if (!intent.hasExtra("android.bluetooth.BluetoothDevice") && shared) {
+            Toast.makeText(this, R.string.toast_share_first_try_connect, Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
         bluetoothDevice = intent.parcelable("android.bluetooth.BluetoothDevice")
+
         bindService(Intent(this, SerialService::class.java), this, Context.BIND_AUTO_CREATE)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -96,17 +108,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             ActivityResultContracts.GetContent()
         ) { uri ->
             if (uri != null) {
-                getContentFd = contentResolver.openFileDescriptor(uri, "r")
-                val getContentFileName = contentResolver.queryName(uri).replace("""\s""".toRegex(), "_")
-                println("Picked filename: $getContentFileName")
-                opusFileName = "$getContentFileName.opus"
-                opusPacketsFileName = "$getContentFileName.opus_packets"
-                val opusOutput = openFileOutput(opusFileName, Context.MODE_PRIVATE)
-                val opusPacketsOutput = openFileOutput(opusPacketsFileName, Context.MODE_PRIVATE)
-                val transcoder = OpusTranscoder(getContentFd!!)
-                transcoder.onStartedListener = ::onTranscoderStarted
-                transcoder.onFinishedListener = ::onTranscoderFinished
-                transcoder.start(opusOutput, opusPacketsOutput)
+                startTranscoderFromUri(uri)
             } else {
                 binding.appBarMain.fab?.let {
                     Snackbar.make(it, R.string.snackbar_no_file_picked, Snackbar.LENGTH_LONG).show()
@@ -203,6 +205,17 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
                 initialStart = false
                 runOnUiThread(this@MainActivity::connect)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        val uri = intent?.audioUri
+        println("uri: $uri")
+        if (uri != null) {
+            startTranscoderFromUri(uri)
+        } else {
+            Toast.makeText(this, R.string.toast_no_valid_uri_found_in_intent, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -319,6 +332,20 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private fun onSerialError() {
         startActivity(Intent(this, FindDeviceActivity::class.java))
         finish()
+    }
+
+    private fun startTranscoderFromUri(uri: Uri) {
+        getContentFd = contentResolver.openFileDescriptor(uri, "r")
+        val getContentFileName = contentResolver.queryName(uri).replace("""\s""".toRegex(), "_")
+        println("Picked filename: $getContentFileName")
+        opusFileName = "$getContentFileName.opus"
+        opusPacketsFileName = "$getContentFileName.opus_packets"
+        val opusOutput = openFileOutput(opusFileName, Context.MODE_PRIVATE)
+        val opusPacketsOutput = openFileOutput(opusPacketsFileName, Context.MODE_PRIVATE)
+        val transcoder = OpusTranscoder(getContentFd!!)
+        transcoder.onStartedListener = ::onTranscoderStarted
+        transcoder.onFinishedListener = ::onTranscoderFinished
+        transcoder.start(opusOutput, opusPacketsOutput)
     }
 
     private fun onTranscoderStarted(): Any? {
