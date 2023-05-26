@@ -74,7 +74,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
                 "square_clip" -> R.drawable.ic_blue_square_button
                 "heart_clip" -> R.drawable.ic_yellow_heart_button
                 "beak_switch" -> R.drawable.ic_beak_switch
-                else -> R.drawable.ic_unknown
+                else -> R.drawable.ic_unknown_grey
             }, path.removePrefix("/$firstDirectory/"), opusPaths[i])
         })
     }

@@ -32,5 +32,21 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="This is item # xx" />
 
+        <TextView
+            android:id="@+id/text_view_date_time_item_previously_uploaded"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="6dp"
+            android:layout_marginStart="8dp"
+            android:textSize="11sp"
+            android:textColor="@color/grey_that_looks_good_on_both_daynight"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_view_item_previously_uploaded"
+            app:layout_constraintStart_toEndOf="@id/image_view_item_previously_uploaded"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="This is date time of item # xx" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

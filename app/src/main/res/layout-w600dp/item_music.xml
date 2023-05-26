@@ -45,6 +45,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:contentDescription="@string/image_view_item_music_content_description"
-            android:src="@drawable/ic_three_dot_menu_24dp" />
+            android:src="@drawable/ic_three_dot_menu_grey_24dp" />
     </com.google.android.material.card.MaterialCardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

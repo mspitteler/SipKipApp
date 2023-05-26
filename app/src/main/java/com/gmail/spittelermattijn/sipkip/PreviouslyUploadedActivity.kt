@@ -54,8 +54,9 @@ class PreviouslyUploadedActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: PreviouslyUploadedViewHolder, position: Int) {
-            val (drawable, path) = getItem(position)
+            val (drawable, path, lastModified) = getItem(position)
             holder.textView.text = path
+            holder.textViewDateTime.text = lastModified
             holder.imageView.setImageDrawable(
                 ResourcesCompat.getDrawable(holder.imageView.resources, drawable, holder.imageView.context.theme)
             )
@@ -67,5 +68,6 @@ class PreviouslyUploadedActivity : AppCompatActivity() {
 
         val imageView: ImageView = binding.imageViewItemPreviouslyUploaded
         val textView: TextView = binding.textViewItemPreviouslyUploaded
+        val textViewDateTime: TextView = binding.textViewDateTimeItemPreviouslyUploaded
     }
 }
