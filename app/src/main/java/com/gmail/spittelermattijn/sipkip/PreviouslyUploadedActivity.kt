@@ -54,10 +54,10 @@ class PreviouslyUploadedActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: PreviouslyUploadedViewHolder, position: Int) {
-            val item = getItem(position)
-            holder.textView.text = item.path
+            val (drawable, path) = getItem(position)
+            holder.textView.text = path
             holder.imageView.setImageDrawable(
-                ResourcesCompat.getDrawable(holder.imageView.resources, item.drawable, holder.imageView.context.theme)
+                ResourcesCompat.getDrawable(holder.imageView.resources, drawable, holder.imageView.context.theme)
             )
         }
     }

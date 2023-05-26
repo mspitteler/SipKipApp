@@ -107,13 +107,13 @@ class MusicFragment : Fragment(), FragmentInterface {
         }
 
         override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
-            val item = getItem(position)
-            holder.textView.text = item.displayPath
+            val (drawable, displayPath, fullPath) = getItem(position)
+            holder.textView.text = displayPath
             holder.imageView.setImageDrawable(
-                ResourcesCompat.getDrawable(holder.imageView.resources, item.drawable, null)
+                ResourcesCompat.getDrawable(holder.imageView.resources, drawable, null)
             )
             // Use the content description to hold the full path.
-            holder.cardView.contentDescription = item.fullPath
+            holder.cardView.contentDescription = fullPath
         }
     }
 

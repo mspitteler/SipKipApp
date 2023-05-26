@@ -44,7 +44,7 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
         results.addAll(datas)
     }}
 
-    fun executeBlocking(longTimeout: Boolean = false) = with(lock) {
+    suspend fun executeBlocking(longTimeout: Boolean = false) = with(lock) {
         lock()
         executionInstance = this@SerialCommand
         cb.noException(command.toByteArray())

@@ -6,26 +6,23 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.gmail.spittelermattijn.sipkip.serial.SerialCommand
 import com.gmail.spittelermattijn.sipkip.R
-import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
+import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 import kotlin.reflect.KFunction1
 
 class MusicViewModel(application: Application) : ViewModelBase(application) {
     override val littleFsPath = "/music"
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
-    override var serialWriteCallback: KFunction1<ByteArray, Unit>? = null
-        set(cb) {
-            field = cb
-            coroutineScope.launch {
-                synchronized(getApplication<Application>().applicationContext) {
-                    // Wait for first prompt by sending empty command.
-                    field?.let { SerialCommand(it, "\n").executeBlocking() }
-                    update()
-                }
-            }
+    override var serialWriteCallback by Delegates.observable(null as KFunction1<ByteArray, Unit>?) { _, _, new ->
+        coroutineScope.launch {
+            // Wait for first prompt by sending empty command.
+            new?.let { SerialCommand(it, "\n").executeBlocking() }
+            update()
         }
+    }
 
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
@@ -37,7 +34,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private val _items: MutableLiveData<List<Item>> = MutableLiveData()
     val items: LiveData<List<Item>> = _items
 
-    private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
+    private suspend fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
         val results = SerialCommand(cb, "ls /littlefs/$pathSlash\n").executeBlocking()
         for (result in results.map { String(it!!) }) {
@@ -89,27 +86,27 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
             SerialCommand.executionInstance?.postAllExecutionResultsReceived()
     }
 
-    fun removeItem(fullPath: String) {
+    suspend fun removeItem(fullPath: String) {
         serialWriteCallback?.let {
             SerialCommand(it, "rm /littlefs/$fullPath.opus\n").executeBlocking()
             SerialCommand(it, "rm /littlefs/$fullPath.opus_packets\n").executeBlocking()
         }
     }
 
-    fun renameItem(fullPath: String, newFullPath: String) {
+    suspend fun renameItem(fullPath: String, newFullPath: String) {
         serialWriteCallback?.let {
             SerialCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n").executeBlocking(true)
             SerialCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n").executeBlocking(true)
         }
     }
 
-    fun changeItemFirstDirectory(fullPath: String, firstDirectory: String) {
+    suspend fun changeItemFirstDirectory(fullPath: String, firstDirectory: String) {
         val path = fullPath.removePrefix(littleFsPath)
         val newFullPath = "$littleFsPath/${path.replaceFirst("[^/]+/".toRegex(), "$firstDirectory/")}"
         renameItem(fullPath, newFullPath)
     }
 
-    fun update() {
+    suspend fun update() {
         exploredPaths.clear(littleFsPath)
         serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }
         updateLiveData()

@@ -75,11 +75,9 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private var isResumed by Delegates.notNull<Boolean>()
     private var service: SerialService? = null
     private val serialQueue: BlockingQueue<Byte> = ArrayBlockingQueue(10000)
-    private var serialIsBlocking = false
-        set(isBlocking) {
-            field = isBlocking
-            currentFragment.viewModel.serialWriteCallback = if (field) null else service!!::write
-        }
+    private var serialIsBlocking by Delegates.observable(false) { _, _, new ->
+        currentFragment.viewModel.serialWriteCallback = if (new) null else service!!::write
+    }
 
     private enum class Connected { False, Pending, True }
 
@@ -88,7 +86,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         Preferences.addContextGetter { this }
         super.onCreate(savedInstanceState)
 
-        val shared = intent.action == Intent.ACTION_SEND || intent.action == Intent.ACTION_VIEW || intent.action == Intent().ACTION_MUSIC_PLAYER
+        val shared = intent.action in setOf(Intent.ACTION_SEND, Intent.ACTION_VIEW, Intent().ACTION_MUSIC_PLAYER)
 
         if (!intent.hasExtra("android.bluetooth.BluetoothDevice") && shared) {
             Toast.makeText(this, R.string.toast_share_first_try_connect, Toast.LENGTH_LONG).show()

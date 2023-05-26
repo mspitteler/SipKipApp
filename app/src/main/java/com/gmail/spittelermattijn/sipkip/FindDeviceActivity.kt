@@ -29,6 +29,7 @@ import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 
 class FindDeviceActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -39,36 +40,32 @@ class FindDeviceActivity : AppCompatActivity() {
     private lateinit var requestBluetoothPermissionLauncherForRefresh: ActivityResultLauncher<Array<String>>
     private var hasPermissions = false
     private lateinit var deviceName: String
-    private var bondedBluetoothDevice: BluetoothDevice? = null
-        @SuppressLint("MissingPermission")
-        set(device) {
-            field = device
+    private var bondedBluetoothDevice: BluetoothDevice? by Delegates.observable(null) { _, _, new ->
+        new?.let {
             // Check if the device is in range.
-            field?.let {
-                val socket = it.createRfcommSocketToServiceRecord(SerialSocket.BLUETOOTH_SPP)
-                coroutineScope.launch {
-                    try {
-                        socket.connect()
-                        socket.close()
-                        bluetoothDevice = bondedBluetoothDevice
-                    } catch (e: Exception) {
-                        // Recursively call this setter.
-                        bondedBluetoothDevice = bondedBluetoothDevice
-                    }
+            @SuppressLint("MissingPermission") val socket = it.createRfcommSocketToServiceRecord(SerialSocket.BLUETOOTH_SPP)
+            coroutineScope.launch {
+                try {
+                    @SuppressLint("MissingPermission")
+                    val unused = socket.connect()
+                    socket.close()
+                    bluetoothDevice = bondedBluetoothDevice
+                } catch (e: Exception) {
+                    // Recursively call this setter.
+                    bondedBluetoothDevice = bondedBluetoothDevice
                 }
             }
         }
-    private var bluetoothDevice: BluetoothDevice? = null
-        set(device) {
-            field = device
-            field?.let { dev ->
-                val intent = Intent(this, MainActivity::class.java).also {
-                    it.putExtra("android.bluetooth.BluetoothDevice", dev)
-                }
-                startActivity(intent)
-                finish()
+    }
+    private var bluetoothDevice by Delegates.observable(null as BluetoothDevice?) { _, _, new ->
+        new?.let { dev ->
+            val intent = Intent(this, MainActivity::class.java).also {
+                it.putExtra("android.bluetooth.BluetoothDevice", dev)
             }
+            startActivity(intent)
+            finish()
         }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Preferences.addContextGetter { this }
