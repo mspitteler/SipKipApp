@@ -28,7 +28,7 @@ import com.gmail.spittelermattijn.sipkip.serial.SerialListener
 import com.gmail.spittelermattijn.sipkip.serial.SerialService
 import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
-import com.gmail.spittelermattijn.sipkip.util.audioUri
+import com.gmail.spittelermattijn.sipkip.util.getUriWithType
 import com.gmail.spittelermattijn.sipkip.util.ACTION_MUSIC_PLAYER
 import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
@@ -208,7 +208,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        val uri = intent?.audioUri
+        val uri = intent?.getUriWithType("audio/")
         println("uri: $uri")
         if (uri != null) {
             startTranscoderFromUri(uri)

@@ -13,9 +13,9 @@ inline fun <reified T : Parcelable> Intent.parcelable(key: String): T = when {
 @Suppress("Unused")
 val Intent.ACTION_MUSIC_PLAYER get() = "android.intent.action.MUSIC_PLAYER"
 
-val Intent.audioUri: Uri? get() {
+fun Intent.getUriWithType(typePrefix: String): Uri? {
     var uri: Uri? = null
-    if (type?.startsWith("audio/") == true) {
+    if (type?.startsWith(typePrefix) == true) {
         if (action == Intent.ACTION_SEND)
             uri = parcelable(Intent.EXTRA_STREAM)
         else if (scheme == "content")
