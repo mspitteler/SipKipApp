@@ -135,13 +135,6 @@ class FindDeviceActivity : AppCompatActivity() {
         }
 
         refresh()
-        Preferences.registerOnChangeListener { key, `val` ->
-            if (key == R.string.bluetooth_device_name_key) {
-                // TODO: Do this a more elegant way.
-                startActivity( Intent(this, FindDeviceActivity::class.java))
-                finish()
-            }
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
