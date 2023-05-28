@@ -164,7 +164,7 @@ class SerialService : Service(), SerialListener {
         val disconnectPendingIntent = PendingIntent.getBroadcast(this, 1, disconnectIntent, flags)
         val restartPendingIntent = PendingIntent.getActivity(this, 1, restartIntent, flags)
         val builder = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification_white_24dp)
             .setColor(getColor(R.color.white))
             .setContentTitle(resources.getString(R.string.app_name))
             .setContentText(socket?.let{ "Connected to ${it.name}" } ?: "Background Service" )
@@ -172,19 +172,18 @@ class SerialService : Service(), SerialListener {
             .setOngoing(true)
             .addAction(
                 NotificationCompat.Action(
-                    R.drawable.ic_clear_white_24dp,
+                    R.drawable.ic_clear_notification_white_24dp,
                     "Disconnect",
                     disconnectPendingIntent
                 )
             )
-        // @drawable/ic_notification created with Android Studio -> New -> Image Asset using @color/colorPrimaryDark as background color
-        // Android < API 21 does not support vectorDrawables in notifications, so both drawables used here, are created as .png instead of .xml
+
         val notification = builder.build()
         startForeground(Constants.NOTIFY_MANAGER_START_FOREGROUND_SERVICE, notification)
     }
 
     private fun cancelNotification() {
-        stopForeground(STOP_FOREGROUND_DETACH)
+        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     /**
