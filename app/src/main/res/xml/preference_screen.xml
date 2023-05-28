@@ -12,22 +12,24 @@
             android:title="@string/preference_title_bluetooth_device_name"
             app:useSimpleSummaryProvider="true"/>
 
-        <SeekBarPreference
+        <com.gmail.spittelermattijn.sipkip.ui.preferences.MaterialSliderPreference
             android:key="@string/bluetooth_command_timeout_key"
             app:min="@integer/bluetooth_command_timeout_min"
             android:max="@integer/bluetooth_command_timeout_max"
+            app:seekBarIncrement="100"
             android:defaultValue="@integer/default_bluetooth_command_timeout"
+            android:layout="@layout/material_slider_preference"
             android:title="@string/preference_title_bluetooth_command_timeout"
-            app:showSeekBarValue="true"
             android:summary="@string/preference_summary_bluetooth_command_timeout"/>
 
-        <SeekBarPreference
+        <com.gmail.spittelermattijn.sipkip.ui.preferences.MaterialSliderPreference
             android:key="@string/bluetooth_command_long_timeout_key"
             app:min="@integer/bluetooth_command_long_timeout_min"
             android:max="@integer/bluetooth_command_long_timeout_max"
+            app:seekBarIncrement="1000"
             android:defaultValue="@integer/default_bluetooth_command_long_timeout"
+            android:layout="@layout/material_slider_preference"
             android:title="@string/preference_title_bluetooth_command_long_timeout"
-            app:showSeekBarValue="true"
             android:summary="@string/preference_summary_bluetooth_command_long_timeout"/>
 
     </PreferenceCategory>
@@ -43,9 +45,10 @@
             android:title="@string/preference_title_xmodem_1k_threshold"
             app:useSimpleSummaryProvider="true"/>
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:key="@string/xmodem_use_crc_key"
             android:defaultValue="@bool/default_xmodem_use_crc"
+            android:widgetLayout="@layout/material_switch_preference"
             android:title="@string/preference_title_xmodem_use_crc"
             android:summaryOn="@string/preference_summary_on_xmodem_use_crc"
             android:summaryOff="@string/preference_summary_off_xmodem_use_crc"/>
@@ -63,9 +66,10 @@
             android:title="@string/preference_title_encoder_sample_rate"
             app:useSimpleSummaryProvider="true"/>
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:key="@string/encoder_stereo_key"
             android:defaultValue="@bool/default_encoder_stereo"
+            android:widgetLayout="@layout/material_switch_preference"
             android:title="@string/preference_title_encoder_use_stereo"
             android:summaryOn="@string/preference_summary_on_encoder_stereo"
             android:summaryOff="@string/preference_summary_off_encoder_stereo"/>
