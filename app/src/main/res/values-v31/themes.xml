@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.SipKip" parent="Theme.Material3.DynamicColors.DayNight">
+    <style name="Theme.SipKip" parent="Theme.Material3.DynamicColors.Light">
         <!-- Customize your theme here. -->
     </style>
 
@@ -10,7 +10,7 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.SipKip.AppBarOverlay" parent="ThemeOverlay.Material3.DynamicColors.Dark" />
+    <style name="Theme.SipKip.AppBarOverlay" parent="ThemeOverlay.Material3.DynamicColors.Light" />
 
-    <style name="Theme.SipKip.PopupOverlay" parent="ThemeOverlay.Material3.DynamicColors.Light" />
+    <style name="Theme.SipKip.PopupOverlay" parent="ThemeOverlay.Material3.DynamicColors.Dark" />
 </resources>

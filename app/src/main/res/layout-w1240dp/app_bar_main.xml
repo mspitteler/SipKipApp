@@ -8,9 +8,11 @@
     tools:context=".MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:layout_marginHorizontal="@dimen/app_bar_layout_horizontal_margin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Theme.SipKip.AppBarOverlay">
+        android:theme="@style/Theme.SipKip.AppBarOverlay"
+        android:background="@android:color/transparent">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"

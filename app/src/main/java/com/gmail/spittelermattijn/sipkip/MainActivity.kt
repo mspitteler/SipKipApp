@@ -37,8 +37,11 @@ import com.gmail.spittelermattijn.sipkip.util.queryName
 import com.gmail.spittelermattijn.sipkip.util.showFirstDirectoryPicker
 import com.gmail.spittelermattijn.sipkip.util.showNewOrPreviouslyUploadedPicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.elevation.SurfaceColors
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import jermit.protocol.SerialFileTransferSession
@@ -52,9 +55,9 @@ import java.io.OutputStream
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import kotlin.properties.Delegates
+import kotlin.reflect.KFunction1
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-import kotlin.reflect.KFunction1
 
 
 class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
@@ -101,6 +104,10 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.appBarMain.toolbar)
+        window.statusBarColor = SurfaceColors.SURFACE_0.getColor(this)
+        val materialShapeDrawable = binding.appBarMain.toolbar.background as MaterialShapeDrawable
+        materialShapeDrawable.shapeAppearanceModel = materialShapeDrawable.shapeAppearanceModel.toBuilder()
+            .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
 
         filePickerActivityResultLauncher = registerForActivityResult(
             ActivityResultContracts.GetContent()

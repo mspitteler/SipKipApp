@@ -4,4 +4,5 @@
     <dimen name="item_image_length">142dp</dimen>
     <dimen name="item_music_card_view_length" tools:ignore="MissingDefaultResource">32dp</dimen>
     <dimen name="item_text_view_margin_start" tools:ignore="MissingDefaultResource">16dp</dimen>
+    <dimen name="app_bar_layout_horizontal_margin">15dp</dimen>
 </resources>
