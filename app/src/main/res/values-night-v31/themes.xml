@@ -2,9 +2,6 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Theme.SipKip" parent="Theme.Material3.DynamicColors.Dark">
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorSurface</item>
-        <item name="android:windowLightStatusBar">false</item>
         <!-- Customize your theme here. -->
     </style>
 </resources>

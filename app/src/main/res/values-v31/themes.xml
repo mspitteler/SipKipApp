@@ -2,13 +2,11 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Theme.SipKip" parent="Theme.Material3.DynamicColors.Light">
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorSurface</item>
-        <item name="android:windowLightStatusBar">true</item>
         <!-- Customize your theme here. -->
     </style>
 
     <style name="Theme.SipKip.NoActionBar">
+        <!-- Don't request support action bar. -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
