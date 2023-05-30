@@ -18,7 +18,6 @@ import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import com.gmail.spittelermattijn.sipkip.util.queryName
 import com.gmail.spittelermattijn.sipkip.util.showNewOrPreviouslyUploadedPicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.elevation.SurfaceColors
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.MaterialShapeDrawable
@@ -39,7 +38,6 @@ import kotlin.time.toDuration
 fun MainActivity.inflateLayout() = ActivityMainBinding.inflate(layoutInflater).also {
     setContentView(it.root)
     setSupportActionBar(it.appBarMain.toolbar)
-    window.statusBarColor = SurfaceColors.SURFACE_0.getColor(this)
     val materialShapeDrawable = it.appBarMain.toolbar.background as MaterialShapeDrawable
     materialShapeDrawable.shapeAppearanceModel = materialShapeDrawable.shapeAppearanceModel.toBuilder()
         .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()

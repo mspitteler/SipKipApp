@@ -10,11 +10,12 @@
         <item name="colorSecondaryVariant">@color/teal_200</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar">false</item>
         <!-- Customize your theme here. -->
     </style>
 
-    <style name="Theme.SipKip.AppBarOverlay" parent="ThemeOverlay.Material3.Dark" />
-
-    <style name="Theme.SipKip.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
+    <style name="Theme.SipKip.PopupOverlay" parent="Widget.Material3.PopupMenu.Overflow">
+        <item name="android:backgroundTint">?attr/colorSurfaceContainerHigh</item>
+    </style>
 </resources>

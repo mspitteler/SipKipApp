@@ -28,6 +28,8 @@ import com.gmail.spittelermattijn.sipkip.util.compareTo
 import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
 import kotlinx.coroutines.launch
 import kotlin.properties.Delegates
 
@@ -113,6 +115,9 @@ class FindDeviceActivity : AppCompatActivity() {
         registerReceiver(receiver, filter)
 
         binding = ActivityFindDeviceBinding.inflate(layoutInflater)
+        val materialShapeDrawable = binding.appBarFindDevice.toolbar.background as MaterialShapeDrawable
+        materialShapeDrawable.shapeAppearanceModel = materialShapeDrawable.shapeAppearanceModel.toBuilder()
+            .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
         setContentView(binding.root)
         setSupportActionBar(binding.appBarFindDevice.toolbar)
 

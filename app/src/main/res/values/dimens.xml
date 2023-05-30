@@ -3,5 +3,4 @@
     <dimen name="fragment_horizontal_margin">10dp</dimen>
     <dimen name="item_image_length">48dp</dimen>
     <dimen name="item_music_card_view_corner_radius">24dp</dimen>
-    <dimen name="app_bar_layout_horizontal_margin">10dp</dimen>
 </resources>

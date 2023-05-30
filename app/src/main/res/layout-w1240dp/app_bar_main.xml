@@ -8,17 +8,15 @@
     tools:context=".MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
-        android:layout_marginHorizontal="@dimen/app_bar_layout_horizontal_margin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Theme.SipKip.AppBarOverlay"
-        android:background="@android:color/transparent">
+        android:background="@null">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
+            android:background="?attr/colorSurfaceVariant"
             app:popupTheme="@style/Theme.SipKip.PopupOverlay" />
 
     </com.google.android.material.appbar.AppBarLayout>
