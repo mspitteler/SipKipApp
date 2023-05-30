@@ -179,6 +179,7 @@ class SerialService : Service(), SerialListener {
             )
 
         val notification = builder.build()
+        // TODO: check if this works correctly on all Android versions.
         startForeground(Constants.NOTIFY_MANAGER_START_FOREGROUND_SERVICE, notification)
     }
 

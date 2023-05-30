@@ -38,6 +38,7 @@ import kotlin.time.toDuration
 fun MainActivity.inflateLayout() = ActivityMainBinding.inflate(layoutInflater).also {
     setContentView(it.root)
     setSupportActionBar(it.appBarMain.toolbar)
+    // TODO: The following might not work on all devices, since background isn't guaranteed to be a MaterialShapeDrawable.
     val materialShapeDrawable = it.appBarMain.toolbar.background as MaterialShapeDrawable
     materialShapeDrawable.shapeAppearanceModel = materialShapeDrawable.shapeAppearanceModel.toBuilder()
         .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
@@ -152,6 +153,7 @@ private fun MainActivity.setupSerialUpload(
     var snackBar: Snackbar? = null
     var progressBar: ProgressBar? = null
     binding.appBarMain.fab?.post {
+        // TODO: Add possibility to cancel transfer.
         snackBar = Snackbar.make(binding.appBarMain.fab!!, R.string.snackbar_upload_progress, Snackbar.LENGTH_LONG)
         val snackView = snackBar!!.view as Snackbar.SnackbarLayout
         progressBar = LinearProgressIndicator(this)

@@ -19,6 +19,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     override var serialWriteCallback by Delegates.observable(null as KFunction1<ByteArray, Unit>?) { _, _, new ->
         coroutineScope.launch {
             // Wait for first prompt by sending empty command.
+            // TODO: Check why this rarely doesn't work.
             new?.let { SerialCommand(it, "\n").executeBlocking() }
             update()
         }
@@ -93,6 +94,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         }
     }
 
+    // TODO: Check if the destination directory exists in these functions.
     suspend fun renameItem(fullPath: String, newFullPath: String) {
         serialWriteCallback?.let {
             SerialCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n").executeBlocking(true)

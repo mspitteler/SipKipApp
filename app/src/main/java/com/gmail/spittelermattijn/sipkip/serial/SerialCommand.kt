@@ -11,6 +11,7 @@ import kotlin.reflect.KFunction1
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
+// TODO: Check if command successfully executed on device.
 class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val command: String) {
     private val lock = ReentrantLock()
     private val condition = lock.newCondition()
@@ -33,6 +34,10 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
                 condition.signal()
             } finally {
                 do {
+                    /*
+                     * TODO: Prevent a crash here if the executeBlocking() function is resumed after
+                     *       the app was stopped temporarily for example.
+                     */
                     unlock()
                 } while (isLocked)
             }

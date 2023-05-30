@@ -58,6 +58,10 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener, Opu
     private var isResumed by Delegates.notNull<Boolean>()
     private var service: SerialService? = null
     private val serialQueue: BlockingQueue<Byte> = ArrayBlockingQueue(10000)
+    /*
+     * TODO: Make sure that the app doesn't crash if a fragment is accessed if it is not yet or not anymore attached.
+     *       This can happen if a transfer is aborted after we switched fragments for example.
+     */
     internal var serialIsBlocking by Delegates.observable(false) { _, _, new ->
         currentFragment!!.viewModel.serialWriteCallback = if (new) null else service!!::write
     }

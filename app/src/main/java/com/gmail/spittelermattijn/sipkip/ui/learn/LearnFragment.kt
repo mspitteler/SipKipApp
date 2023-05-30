@@ -12,6 +12,7 @@ import androidx.navigation.fragment.navArgs
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentLearnBinding
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 
+// TODO: Implement the learn fragment.
 class LearnFragment : Fragment(), FragmentInterface {
     override lateinit var viewModel: LearnViewModel
     private lateinit var bluetoothDevice: BluetoothDevice

@@ -221,6 +221,7 @@ class FindDeviceActivity : AppCompatActivity() {
                     // object and its info from the Intent.
                     val device: BluetoothDevice = intent.parcelable(BluetoothDevice.EXTRA_DEVICE)
                     if (device.name == deviceName) {
+                        // TODO: This seems to completely fuck up bluetooth on some devices (if we try to connect after this).
                         device.createBond()
                         foundDevice = true
                         if (bluetoothAdapter.isDiscovering)

@@ -4,6 +4,7 @@ import android.widget.EditText
 import com.gmail.spittelermattijn.sipkip.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
+// TODO: Add the possibility of moving to a directory with unknown association.
 fun MaterialAlertDialogBuilder.showFirstDirectoryPicker(default: String? = null, cb: (String) -> Unit) {
     val items = arrayOf(
         R.string.first_directory_star_clip to "star_clip", R.string.first_directory_triangle_clip to "triangle_clip",

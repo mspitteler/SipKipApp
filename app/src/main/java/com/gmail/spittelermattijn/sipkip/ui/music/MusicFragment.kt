@@ -94,6 +94,7 @@ class MusicFragment : Fragment(), FragmentInterface {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
             val binding = ItemMusicBinding.inflate(LayoutInflater.from(parent.context))
+            // TODO: Play audio file when icon is clicked.
             return MusicViewHolder(binding).apply { cardView.setOnClickListener {
                 val wrapper = ContextThemeWrapper(it.context, R.style.Theme_SipKip_PopupOverlay)
                 val popup = PopupMenu(wrapper, it)

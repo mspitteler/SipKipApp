@@ -12,6 +12,7 @@ import androidx.navigation.fragment.navArgs
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentPlayBinding
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 
+// TODO: Implement the play fragment.
 class PlayFragment : Fragment(), FragmentInterface {
     override lateinit var viewModel: PlayViewModel
     private lateinit var bluetoothDevice: BluetoothDevice
