@@ -1,11 +1,13 @@
-package com.gmail.spittelermattijn.sipkip
+package com.gmail.spittelermattijn.sipkip.opus
 
 import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaCodecList
-import android.media.MediaFormat
 import android.media.MediaExtractor
+import android.media.MediaFormat
 import android.os.ParcelFileDescriptor
+import com.gmail.spittelermattijn.sipkip.Preferences
+import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.opusjni.Opus
 import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.getByteToFloat
@@ -20,10 +22,16 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.ceil
 import kotlin.math.round
-import kotlin.reflect.KFunction0
-import kotlin.reflect.KFunction3
 
-class OpusTranscoder(input: ParcelFileDescriptor) {
+class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDescriptor) {
+    @Suppress("Unused")
+    constructor(input: ParcelFileDescriptor) : this(object : OpusTranscoderListener {
+        override fun onTranscoderStarted() = null
+        override fun onTranscoderFinished(opusOutput: OutputStream, opusPacketsOutput: OutputStream, args: Any?) {
+            opusOutput.close()
+            opusPacketsOutput.close()
+        }
+    }, input)
     // Use a dedicated Opus encoder, since MediaCodec only supports Opus encoding from Android 10 onwards.
     private val encoder = Opus()
     private val extractor = MediaExtractor()
@@ -35,9 +43,6 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
     private val encoderSampleRate: Int = Preferences[R.string.encoder_sample_rate_key]
     private val encoderChannelCount: Int = if (Preferences[R.string.encoder_stereo_key]) 2 else 1
     private val encoderBitrate: Int = Preferences[R.string.encoder_bitrate_key]
-
-    var onStartedListener: KFunction0<Any?>? = null
-    var onFinishedListener: KFunction3<OutputStream, OutputStream, Any?, Unit>? = null
 
     init {
         encoder.open(encoderChannelCount, encoderSampleRate, encoderBitrate)
@@ -171,13 +176,13 @@ class OpusTranscoder(input: ParcelFileDescriptor) {
                 mc.releaseOutputBuffer(outputBufferId, false)
 
                 if (sos) {
-                    args = onStartedListener!!()
+                    args = listener.onTranscoderStarted()
                     sos = false
                 }
 
                 if (eos) {
                     resampleBuffer = null
-                    onFinishedListener!!(opusOutput, opusPacketsOutput, args)
+                    listener.onTranscoderFinished(opusOutput, opusPacketsOutput, args)
                     encoder.close()
                     extractor.release()
                     coroutineScope.launch {
