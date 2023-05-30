@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
@@ -100,14 +101,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
         bluetoothDevice = intent.parcelable("android.bluetooth.BluetoothDevice")
 
         bindService(Intent(this, SerialService::class.java), this, Context.BIND_AUTO_CREATE)
-
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        setSupportActionBar(binding.appBarMain.toolbar)
-        window.statusBarColor = SurfaceColors.SURFACE_0.getColor(this)
-        val materialShapeDrawable = binding.appBarMain.toolbar.background as MaterialShapeDrawable
-        materialShapeDrawable.shapeAppearanceModel = materialShapeDrawable.shapeAppearanceModel.toBuilder()
-            .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
+        inflateLayout()
 
         filePickerActivityResultLauncher = registerForActivityResult(
             ActivityResultContracts.GetContent()
@@ -137,46 +131,16 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
             }
         }
 
-        binding.appBarMain.fab?.setOnClickListener { _ ->
-            val newCb = { filePickerActivityResultLauncher.launch("audio/*") }
-            if (filesDir.listFiles()?.map { it.name }?.filterValidOpusPaths().isNullOrEmpty()) {
-                newCb()
-            } else {
-                MaterialAlertDialogBuilder(this).showNewOrPreviouslyUploadedPicker(newCb) {
-                    previouslyUploadedActivityResultLauncher.launch(Intent(this, PreviouslyUploadedActivity::class.java))
-                }
-            }
-        }
+        setupNavigation()
+    }
 
-        navHostFragment =
-            (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
-        navHostFragment.view?.visibility = View.GONE
-        val navController = navHostFragment.navController
-        // Do this programmatically, since we want to pass arguments.
-        navController.addOnDestinationChangedListener { _, _, arguments ->
-            arguments?.putParcelable("bluetoothDevice", bluetoothDevice)
-        }
-
-        binding.navView?.let {
-            appBarConfiguration = AppBarConfiguration(
-                setOf(
-                    R.id.nav_music, R.id.nav_play, R.id.nav_learn, R.id.nav_preferences, R.id.nav_bt_settings
-                ),
-                binding.drawerLayout
-            )
-            setupActionBarWithNavController(navController, appBarConfiguration)
-            it.setupWithNavController(navController)
-        }
-
-        binding.appBarMain.contentMain.bottomNavView?.let {
-            appBarConfiguration = AppBarConfiguration(
-                setOf(
-                    R.id.nav_music, R.id.nav_play, R.id.nav_learn
-                )
-            )
-            setupActionBarWithNavController(navController, appBarConfiguration)
-            it.setupWithNavController(navController)
-        }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val manager = supportFragmentManager
+        manager.beginTransaction().detach(navHostFragment).commit()
+        inflateLayout()
+        manager.beginTransaction().attach(navHostFragment).commit()
+        setupNavigation()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -337,6 +301,60 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener {
     private fun onSerialError() {
         startActivity(Intent(this, FindDeviceActivity::class.java))
         finish()
+    }
+
+    private fun inflateLayout() {
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        setSupportActionBar(binding.appBarMain.toolbar)
+        window.statusBarColor = SurfaceColors.SURFACE_0.getColor(this)
+        val materialShapeDrawable = binding.appBarMain.toolbar.background as MaterialShapeDrawable
+        materialShapeDrawable.shapeAppearanceModel = materialShapeDrawable.shapeAppearanceModel.toBuilder()
+            .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
+    }
+
+    private fun setupNavigation() {
+        binding.appBarMain.fab?.setOnClickListener { _ ->
+            val newCb = { filePickerActivityResultLauncher.launch("audio/*") }
+            if (filesDir.listFiles()?.map { it.name }?.filterValidOpusPaths().isNullOrEmpty()) {
+                newCb()
+            } else {
+                MaterialAlertDialogBuilder(this).showNewOrPreviouslyUploadedPicker(newCb) {
+                    previouslyUploadedActivityResultLauncher.launch(Intent(this, PreviouslyUploadedActivity::class.java))
+                }
+            }
+        }
+
+        navHostFragment =
+            (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
+        navHostFragment.view?.visibility = View.GONE
+        val navController = navHostFragment.navController
+
+        // Do this programmatically, since we want to pass arguments.
+        navController.addOnDestinationChangedListener { _, _, arguments ->
+            arguments?.putParcelable("bluetoothDevice", bluetoothDevice)
+        }
+
+        binding.navView?.let {
+            appBarConfiguration = AppBarConfiguration(
+                setOf(
+                    R.id.nav_music, R.id.nav_play, R.id.nav_learn, R.id.nav_preferences, R.id.nav_bt_settings
+                ),
+                binding.drawerLayout
+            )
+            setupActionBarWithNavController(navController, appBarConfiguration)
+            it.setupWithNavController(navController)
+        }
+
+        binding.appBarMain.contentMain.bottomNavView?.let {
+            appBarConfiguration = AppBarConfiguration(
+                setOf(
+                    R.id.nav_music, R.id.nav_play, R.id.nav_learn
+                )
+            )
+            setupActionBarWithNavController(navController, appBarConfiguration)
+            it.setupWithNavController(navController)
+        }
     }
 
     private fun startTranscoderFromUri(uri: Uri) {
