@@ -17,12 +17,12 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     override val littleFsPath = "/music"
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
     override var serialWriteCallback by Delegates.observable(null as KFunction1<ByteArray, Unit>?) { _, _, new ->
-        coroutineScope.launch {
+        coroutineScope.launch { synchronized(getApplication<Application>().applicationContext) {
             // Wait for first prompt by sending empty command.
             // TODO: Check why this rarely doesn't work.
             new?.let { SerialCommand(it, "\n").executeBlocking() }
             update()
-        }
+        }}
     }
 
     private enum class FileType { File, Directory }
@@ -35,7 +35,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private val _items: MutableLiveData<List<Item>> = MutableLiveData()
     val items: LiveData<List<Item>> = _items
 
-    private suspend fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
+    private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
         val results = SerialCommand(cb, "ls /littlefs/$pathSlash\n").executeBlocking()
         for (result in results.map { String(it!!) }) {
@@ -87,7 +87,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
             SerialCommand.executionInstance?.postAllExecutionResultsReceived()
     }
 
-    suspend fun removeItem(fullPath: String) {
+    fun removeItem(fullPath: String) {
         serialWriteCallback?.let {
             SerialCommand(it, "rm /littlefs/$fullPath.opus\n").executeBlocking()
             SerialCommand(it, "rm /littlefs/$fullPath.opus_packets\n").executeBlocking()
@@ -95,26 +95,26 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     }
 
     // TODO: Check if the destination directory exists in these functions.
-    suspend fun renameItem(fullPath: String, newFullPath: String) {
+    fun renameItem(fullPath: String, newFullPath: String) {
         serialWriteCallback?.let {
             SerialCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n").executeBlocking(true)
             SerialCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n").executeBlocking(true)
         }
     }
 
-    suspend fun changeItemFirstDirectory(fullPath: String, firstDirectory: String) {
+    fun changeItemFirstDirectory(fullPath: String, firstDirectory: String) {
         val path = fullPath.removePrefix(littleFsPath)
         val newFullPath = "$littleFsPath/${path.replaceFirst("[^/]+/".toRegex(), "$firstDirectory/")}"
         renameItem(fullPath, newFullPath)
     }
 
-    suspend fun playItem(fullPath: String) {
+    fun playItem(fullPath: String) {
         serialWriteCallback?.let {
             SerialCommand(it, "music /littlefs/$fullPath.opus /littlefs/$fullPath.opus_packets\n").executeBlocking(true)
         }
     }
 
-    suspend fun update() {
+    fun update() {
         exploredPaths.clear(littleFsPath)
         serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }
         updateLiveData()

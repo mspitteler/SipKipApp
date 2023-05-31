@@ -109,9 +109,9 @@ class MusicFragment : Fragment(), FragmentInterface {
                 imageView.setOnClickListener {
                     val fragment: MusicFragment = it.findFragment()
                     val siblings = (it.parent as ViewGroup).children
-                    coroutineScope.launch {
+                    coroutineScope.launch { synchronized(it.context.applicationContext) {
                         fragment.viewModel.playItem(siblings.find { v -> v.id == R.id.card_view_item_music }?.contentDescription.toString())
-                    }
+                    }}
                 }
             }
         }
