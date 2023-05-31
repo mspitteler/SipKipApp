@@ -108,6 +108,12 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         renameItem(fullPath, newFullPath)
     }
 
+    suspend fun playItem(fullPath: String) {
+        serialWriteCallback?.let {
+            SerialCommand(it, "music /littlefs/$fullPath.opus /littlefs/$fullPath.opus_packets\n").executeBlocking(true)
+        }
+    }
+
     suspend fun update() {
         exploredPaths.clear(littleFsPath)
         serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }

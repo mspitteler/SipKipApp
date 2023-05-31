@@ -14,6 +14,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.findFragment
 import androidx.lifecycle.ViewModelProvider
@@ -94,17 +95,25 @@ class MusicFragment : Fragment(), FragmentInterface {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
             val binding = ItemMusicBinding.inflate(LayoutInflater.from(parent.context))
-            // TODO: Play audio file when icon is clicked.
-            return MusicViewHolder(binding).apply { cardView.setOnClickListener {
-                val wrapper = ContextThemeWrapper(it.context, R.style.Theme_SipKip_PopupOverlay)
-                val popup = PopupMenu(wrapper, it)
-                // Inflating the Popup using xml file
-                popup.menuInflater.inflate(R.menu.item_music_options, popup.menu)
+            return MusicViewHolder(binding).apply {
+                cardView.setOnClickListener {
+                    val wrapper = ContextThemeWrapper(it.context, R.style.Theme_SipKip_PopupOverlay)
+                    val popup = PopupMenu(wrapper, it)
+                    // Inflating the Popup using xml file
+                    popup.menuInflater.inflate(R.menu.item_music_options, popup.menu)
 
-                // Registering popup with OnMenuItemClickListener
-                popup.setOnMenuItemClickListener(OnMenuItemClickListener(it.context, it.contentDescription.toString(), it.findFragment()))
-                popup.show() // Sowing popup menu
-            }}
+                    // Registering popup with OnMenuItemClickListener
+                    popup.setOnMenuItemClickListener(OnMenuItemClickListener(it.context, it.contentDescription.toString(), it.findFragment()))
+                    popup.show() // Sowing popup menu
+                }
+                imageView.setOnClickListener {
+                    val fragment: MusicFragment = it.findFragment()
+                    val siblings = (it.parent as ViewGroup).children
+                    coroutineScope.launch {
+                        fragment.viewModel.playItem(siblings.find { v -> v.id == R.id.card_view_item_music }?.contentDescription.toString())
+                    }
+                }
+            }
         }
 
         override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {

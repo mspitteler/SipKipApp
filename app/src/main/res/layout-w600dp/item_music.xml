@@ -5,16 +5,20 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/image_view_item_music"
         android:layout_width="@dimen/item_image_length"
         android:layout_height="@dimen/item_image_length"
         android:layout_margin="8dp"
         android:contentDescription="@string/image_view_item_music_content_description"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?android:attr/selectableItemBackground"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:shapeAppearanceOverlay="@style/Theme.SipKip.RoundedImageView"
         tools:src="@tools:sample/avatars" />
 
     <TextView

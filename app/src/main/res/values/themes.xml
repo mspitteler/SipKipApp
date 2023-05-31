@@ -27,4 +27,8 @@
     <style name="Theme.SipKip.PopupOverlay" parent="Widget.Material3.PopupMenu.Overflow">
         <item name="android:backgroundTint">?attr/colorSecondaryContainer</item>
     </style>
+
+    <style name="Theme.SipKip.RoundedImageView">
+        <item name="cornerSize">20%</item>
+    </style>
 </resources>
