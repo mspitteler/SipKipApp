@@ -31,3 +31,6 @@ fun Intent.getUriWithType(typePrefix: String): Uri? {
     }
     return uri
 }
+
+val Intent.actionIsShared: Boolean
+    get() = action in setOf(Intent.ACTION_SEND, Intent.ACTION_VIEW, Intent().ACTION_MUSIC_PLAYER)

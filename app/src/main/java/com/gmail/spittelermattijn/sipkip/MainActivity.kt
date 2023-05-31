@@ -26,7 +26,7 @@ import com.gmail.spittelermattijn.sipkip.serial.SerialService
 import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
 import com.gmail.spittelermattijn.sipkip.util.getUriWithType
-import com.gmail.spittelermattijn.sipkip.util.ACTION_MUSIC_PLAYER
+import com.gmail.spittelermattijn.sipkip.util.actionIsShared
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.gmail.spittelermattijn.sipkip.util.showFirstDirectoryPicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -73,9 +73,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener, Opu
         Preferences.addContextGetter { this }
         super.onCreate(savedInstanceState)
 
-        val shared = intent.action in setOf(Intent.ACTION_SEND, Intent.ACTION_VIEW, Intent().ACTION_MUSIC_PLAYER)
-
-        if (!intent.hasExtra("android.bluetooth.BluetoothDevice") && shared) {
+        if (!intent.hasExtra("android.bluetooth.BluetoothDevice") && intent.actionIsShared) {
             Toast.makeText(this, R.string.toast_share_first_try_connect, Toast.LENGTH_LONG).show()
             finish()
             return
@@ -166,7 +164,10 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener, Opu
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        val uri = intent?.getUriWithType("audio/")
+
+        if (intent == null || !intent.actionIsShared)
+            return
+        val uri = intent.getUriWithType("audio/")
         println("uri: $uri")
         if (uri != null)
             getContentFd = startTranscoderFromUri(uri)
