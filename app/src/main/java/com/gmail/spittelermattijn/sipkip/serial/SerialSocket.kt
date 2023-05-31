@@ -9,9 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import com.gmail.spittelermattijn.sipkip.Constants
-import com.gmail.spittelermattijn.sipkip.util.coroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import java.util.UUID
 
 class SerialSocket(context: Context, device: BluetoothDevice) {
@@ -21,7 +18,6 @@ class SerialSocket(context: Context, device: BluetoothDevice) {
     private val device: BluetoothDevice
     private var socket: BluetoothSocket? = null
     private var connected = false
-    private var job: Job? = null
 
     init {
         if (context is Activity) throw java.security.InvalidParameterException("expected non UI context")
@@ -48,13 +44,11 @@ class SerialSocket(context: Context, device: BluetoothDevice) {
             disconnectBroadcastReceiver,
             IntentFilter(Constants.INTENT_ACTION_DISCONNECT)
         )
-        job?.cancel()
-        job = coroutineScope.launch { run() }
+        val serialThread = Thread(::run)
+        serialThread.start()
     }
 
     fun disconnect() {
-        job?.cancel()
-        job = null
         listener = null // ignore remaining data and errors
         // connected = false; // run loop will reset connected
         try {
