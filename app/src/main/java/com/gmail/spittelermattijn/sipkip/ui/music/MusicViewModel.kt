@@ -29,6 +29,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private data class File(val type: FileType, val name: String)
     private val exploredPaths: ArrayList<File> = ArrayList()
     private val promptRegex = """\d+@SipKip > \s*""".toRegex()
+    private var executionFailed = false
 
     data class Item(@DrawableRes val drawable: Int, val displayPath: String, val fullPath: String)
 
@@ -82,9 +83,16 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
         SerialCommand.executionInstance?.postExecutionResults(datas!!)
+        if (datas!!.any { data -> String(data!!).split('\n').any { str ->
+                // It's okay to do this general of a check, because we would never upload a filename that contains spaces anyway.
+                setOf("Invalid ", "Failed ", "Couldn't ").any { str.startsWith(it) } ||
+                        str matches """(Unknown command: .*!)|(Command .* error: .*!)""".toRegex()
+        }}) executionFailed = true
 
-        if (datas!!.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex })
-            SerialCommand.executionInstance?.postAllExecutionResultsReceived()
+        if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex }) {
+            SerialCommand.executionInstance?.postAllExecutionResultsReceived(executionFailed)
+            executionFailed = false
+        }
     }
 
     fun removeItem(fullPath: String) {

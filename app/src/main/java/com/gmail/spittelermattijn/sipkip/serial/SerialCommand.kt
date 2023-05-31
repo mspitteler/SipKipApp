@@ -11,13 +11,13 @@ import kotlin.reflect.KFunction1
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-// TODO: Check if command successfully executed on device.
 class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val command: String) {
     private val lock = ReentrantLock()
     private val condition = lock.newCondition()
 
     private val results: ArrayList<ByteArray?> = ArrayList()
     private var allResultsReceived = false
+    private var failed = false
     private val scope = CoroutineScope(Dispatchers.Main)
 
     init { executionInstance = null }
@@ -27,9 +27,10 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
         try { this(data) } catch (ignored: Exception) {}
     }
 
-    fun postAllExecutionResultsReceived() = scope.launch { with(lock) {
+    fun postAllExecutionResultsReceived(fail: Boolean) = scope.launch { with(lock) {
         if (!allResultsReceived) {
             try {
+                failed = fail
                 allResultsReceived = true
                 condition.signal()
             } finally {
@@ -61,7 +62,7 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
                 Preferences.get<Int>(R.string.bluetooth_command_long_timeout_key)
             else
                 Preferences[R.string.bluetooth_command_timeout_key]).toDuration(DurationUnit.MILLISECONDS))
-            postAllExecutionResultsReceived()
+            postAllExecutionResultsReceived(false)
         }
 
         try {
@@ -71,8 +72,10 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
             executionInstance = null
             unlock()
         }
-        results
+        if (failed) throw ExecutionFailedException(results.joinToString("\n") { String(it!!) }) else results
     }
+
+    class ExecutionFailedException(message: String) : Exception(message)
 
     companion object { var executionInstance: SerialCommand? = null }
 }
