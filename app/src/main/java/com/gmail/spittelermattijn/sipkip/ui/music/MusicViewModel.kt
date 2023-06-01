@@ -28,7 +28,6 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
     private val exploredPaths: ArrayList<File> = ArrayList()
-    private val promptRegex = """\d+@SipKip > \s*""".toRegex()
     private var executionFailed = false
 
     data class Item(@DrawableRes val drawable: Int, val displayPath: String, val fullPath: String)
@@ -41,10 +40,10 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         val results = SerialCommand(cb, "ls /littlefs/$pathSlash\n").executeBlocking()
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
-            for (line in result.split('\n').filter { !(it matches promptRegex) }) {
+            for (line in result.split('\n').filter { !(it matches Regexes.PROMPT) }) {
                 val newPath = "$pathSlash$line"
                 // If line has trailing slash
-                if (line matches """[^/]+/\s*""".toRegex()) { // Directory
+                if (line matches Regexes.DIRECTORY) { // Directory
                     println("Adding directory: $newPath")
                     add(File(FileType.Directory, newPath))
                     update(cb, newPath)
@@ -82,14 +81,15 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     }
 
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
-        SerialCommand.executionInstance?.postExecutionResults(datas!!)
-        if (datas!!.any { data -> String(data!!).split('\n').any { str ->
-                // It's okay to do this general of a check, because we would never upload a filename that contains spaces anyway.
-                setOf("Invalid ", "Failed ", "Couldn't ").any { str.startsWith(it) } ||
-                        str matches """(Unknown command: .*!)|(Command .* error: .*!)""".toRegex()
-        }}) executionFailed = true
+        if (datas == null)
+            return
+        SerialCommand.executionInstance?.postExecutionResults(datas)
+        val lines = datas.map { String(it!!).split('\n') }.flatten()
+        // It's okay to do this general of a check, because we would never upload a filename that contains spaces anyway.
+        if (lines.any { line -> setOf("Invalid ", "Failed ", "Couldn't ").any { line.startsWith(it) } || line matches Regexes.COMMAND_ERROR })
+            executionFailed = true
 
-        if (datas.any { data -> String(data!!).split('\n').last { it.isNotEmpty() } matches promptRegex }) {
+        if (lines.last { it.isNotEmpty() } matches Regexes.PROMPT) {
             SerialCommand.executionInstance?.postAllExecutionResultsReceived(executionFailed)
             executionFailed = false
         }
@@ -126,5 +126,11 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         exploredPaths.clear(littleFsPath)
         serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }
         updateLiveData()
+    }
+
+    private object Regexes {
+        val PROMPT = """\d+@SipKip > \s*""".toRegex()
+        val COMMAND_ERROR = """(Unknown command: .*!)|(Command .* error: .*!)""".toRegex()
+        val DIRECTORY = """[^/]+/\s*""".toRegex()
     }
 }
