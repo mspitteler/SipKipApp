@@ -1,15 +1,14 @@
 package com.gmail.spittelermattijn.sipkip.serial
 
-import com.gmail.spittelermattijn.sipkip.Preferences
-import com.gmail.spittelermattijn.sipkip.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KFunction1
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.time.Duration
 
 class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val command: String) {
     private val lock = ReentrantLock()
@@ -25,6 +24,13 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
     private fun <T> KFunction1<T, Unit>.noException(data: T) {
         // We'll catch it later when the read in SerialService fails.
         try { this(data) } catch (ignored: Exception) {}
+    }
+
+    private fun CoroutineScope.launchIf(
+        condition: Boolean, context: CoroutineContext = EmptyCoroutineContext, block: suspend CoroutineScope.() -> Unit
+    ) {
+        if (condition)
+            launch(context = context, block = block)
     }
 
     fun postAllExecutionResultsReceived(fail: Boolean) = scope.launch { with(lock) {
@@ -50,18 +56,15 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
         results.addAll(datas)
     }}
 
-    fun executeBlocking(longTimeout: Boolean = false) = with(lock) {
+    fun executeBlocking(timeout: Duration) = with(lock) {
         lock()
         executionInstance = this@SerialCommand
         cb.noException(command.toByteArray())
 
         // Use Dispatchers.Main here to make sure signalCommandExecutionResultsReceived gets run on the same thread.
-        scope.launch {
+        scope.launchIf(timeout != Duration.INFINITE) {
             lock()
-            delay((if (longTimeout)
-                Preferences.get<Int>(R.string.bluetooth_command_long_timeout_key)
-            else
-                Preferences[R.string.bluetooth_command_timeout_key]).toDuration(DurationUnit.MILLISECONDS))
+            delay(timeout)
             postAllExecutionResultsReceived(false)
         }
 

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.gmail.spittelermattijn.sipkip.Preferences
 import com.gmail.spittelermattijn.sipkip.serial.SerialCommand
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
@@ -12,6 +13,9 @@ import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import kotlinx.coroutines.launch
 import kotlin.properties.Delegates
 import kotlin.reflect.KFunction1
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class MusicViewModel(application: Application) : ViewModelBase(application) {
     override val littleFsPath = "/music"
@@ -20,11 +24,12 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         coroutineScope.launch { synchronized(getApplication<Application>().applicationContext) {
             // Wait for first prompt by sending empty command.
             // TODO: Check why this rarely doesn't work.
-            new?.let { SerialCommand(it, "\n").executeBlocking() }
+            new?.let { SerialCommand(it, "\n").executeBlocking(DurationLength.Normal.toDuration()) }
             update()
         }}
     }
 
+    private enum class DurationLength { Normal, Long, Infinite }
     private enum class FileType { File, Directory }
     private data class File(val type: FileType, val name: String)
     private val exploredPaths: ArrayList<File> = ArrayList()
@@ -35,9 +40,15 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     private val _items: MutableLiveData<List<Item>> = MutableLiveData()
     val items: LiveData<List<Item>> = _items
 
+    private fun DurationLength.toDuration() = when (this) {
+        DurationLength.Normal -> Preferences.get<Int>(R.string.bluetooth_command_timeout_key).toDuration(DurationUnit.MILLISECONDS)
+        DurationLength.Long -> Preferences.get<Int>(R.string.bluetooth_command_long_timeout_key).toDuration(DurationUnit.MILLISECONDS)
+        DurationLength.Infinite -> Duration.INFINITE
+    }
+
     private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
-        val results = SerialCommand(cb, "ls /littlefs/$pathSlash\n").executeBlocking()
+        val results = SerialCommand(cb, "ls /littlefs/$pathSlash\n").executeBlocking(DurationLength.Normal.toDuration())
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
             for (line in result.split('\n').filter { !(it matches Regexes.PROMPT) }) {
@@ -97,16 +108,18 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
     fun removeItem(fullPath: String) {
         serialWriteCallback?.let {
-            SerialCommand(it, "rm /littlefs/$fullPath.opus\n").executeBlocking()
-            SerialCommand(it, "rm /littlefs/$fullPath.opus_packets\n").executeBlocking()
+            SerialCommand(it, "rm /littlefs/$fullPath.opus\n").executeBlocking(DurationLength.Normal.toDuration())
+            SerialCommand(it, "rm /littlefs/$fullPath.opus_packets\n").executeBlocking(DurationLength.Normal.toDuration())
         }
     }
 
     // TODO: Check if the destination directory exists in these functions.
     fun renameItem(fullPath: String, newFullPath: String) {
         serialWriteCallback?.let {
-            SerialCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n").executeBlocking(true)
-            SerialCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n").executeBlocking(true)
+            var command = SerialCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n")
+            command.executeBlocking(DurationLength.Long.toDuration())
+            command = SerialCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n")
+            command.executeBlocking(DurationLength.Long.toDuration())
         }
     }
 
@@ -118,7 +131,8 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
     fun playItem(fullPath: String) {
         serialWriteCallback?.let {
-            SerialCommand(it, "speak /littlefs/$fullPath.opus /littlefs/$fullPath.opus_packets\n").executeBlocking(true)
+            val command = SerialCommand(it, "speak /littlefs/$fullPath.opus /littlefs/$fullPath.opus_packets\n")
+            command.executeBlocking(DurationLength.Infinite.toDuration())
         }
     }
 
