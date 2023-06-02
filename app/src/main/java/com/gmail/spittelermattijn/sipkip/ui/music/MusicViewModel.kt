@@ -118,7 +118,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
 
     fun playItem(fullPath: String) {
         serialWriteCallback?.let {
-            SerialCommand(it, "music /littlefs/$fullPath.opus /littlefs/$fullPath.opus_packets\n").executeBlocking(true)
+            SerialCommand(it, "speak /littlefs/$fullPath.opus /littlefs/$fullPath.opus_packets\n").executeBlocking(true)
         }
     }
 
