@@ -13,7 +13,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
 import com.gmail.spittelermattijn.sipkip.opus.OpusTranscoder
-import com.gmail.spittelermattijn.sipkip.util.coroutineScope
+import com.gmail.spittelermattijn.sipkip.util.secondaryCoroutineScope
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import com.gmail.spittelermattijn.sipkip.util.queryName
 import com.gmail.spittelermattijn.sipkip.util.showNewOrPreviouslyUploadedPicker
@@ -163,7 +163,7 @@ private fun MainActivity.setupSerialUpload(
         snackBar!!.show()
     }
 
-    coroutineScope.launch {
+    secondaryCoroutineScope.launch {
         serialIsBlocking = true
         delay(timeout.toDuration(DurationUnit.MILLISECONDS))
         writeCbGetter()("rm /littlefs/$pathPrefix/$fileName\n".toByteArray())

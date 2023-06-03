@@ -23,14 +23,13 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.gmail.spittelermattijn.sipkip.R
-import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.databinding.FragmentMusicBinding
 import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
 import com.gmail.spittelermattijn.sipkip.util.showFirstDirectoryPicker
 import com.gmail.spittelermattijn.sipkip.util.showRenameEditText
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
+import com.gmail.spittelermattijn.sipkip.util.runInSecondaryScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.launch
 
 
 /**
@@ -63,8 +62,8 @@ class MusicFragment : Fragment(), FragmentInterface {
 
         val swipeRefreshLayout = binding.swipeRefreshLayoutMusic
         swipeRefreshLayout.setOnRefreshListener {
-            coroutineScope.launch {
-                viewModel.update()
+            runInSecondaryScope {
+                viewModel.update(it)
                 swipeRefreshLayout.post { swipeRefreshLayout.isRefreshing = false }
             }
         }
@@ -109,9 +108,9 @@ class MusicFragment : Fragment(), FragmentInterface {
                 imageView.setOnClickListener {
                     val fragment: MusicFragment = it.findFragment()
                     val siblings = (it.parent as ViewGroup).children
-                    coroutineScope.launch { synchronized(it.context.applicationContext) {
-                        fragment.viewModel.playItem(siblings.find { v -> v.id == R.id.card_view_item_music }?.contentDescription.toString())
-                    }}
+                    runInSecondaryScope { scope ->
+                        fragment.viewModel.playItem(siblings.find { v -> v.id == R.id.card_view_item_music }?.contentDescription.toString(), scope)
+                    }
                 }
             }
         }
@@ -135,25 +134,25 @@ class MusicFragment : Fragment(), FragmentInterface {
                 R.id.option_rename -> {
                     MaterialAlertDialogBuilder(context).showRenameEditText(path.replaceFirst("/*$firstDirectory/*".toRegex(), "")) {
                         Toast.makeText(context, context.getString(R.string.toast_rename, fullPath, it), Toast.LENGTH_SHORT).show()
-                        coroutineScope.launch {
-                            fragment.viewModel.renameItem(fullPath, "${fragment.viewModel.littleFsPath}/$firstDirectory/$it")
-                            fragment.viewModel.update()
+                        runInSecondaryScope { scope ->
+                            fragment.viewModel.renameItem(fullPath, "${fragment.viewModel.littleFsPath}/$firstDirectory/$it", scope)
+                            fragment.viewModel.update(scope)
                         }
                     }
                 }
                 R.id.option_remove -> {
                     Toast.makeText(context, context.getString(R.string.toast_remove, fullPath), Toast.LENGTH_SHORT).show()
-                    coroutineScope.launch {
-                        fragment.viewModel.removeItem(fullPath)
-                        fragment.viewModel.update()
+                    runInSecondaryScope {
+                        fragment.viewModel.removeItem(fullPath, it)
+                        fragment.viewModel.update(it)
                     }
                 }
                 R.id.option_change_first_directory -> {
                     MaterialAlertDialogBuilder(context).showFirstDirectoryPicker(firstDirectory) {
                         Toast.makeText(context, context.getString(R.string.toast_change_first_directory, fullPath, it), Toast.LENGTH_SHORT).show()
-                        coroutineScope.launch {
-                            fragment.viewModel.changeItemFirstDirectory(fullPath, it)
-                            fragment.viewModel.update()
+                        runInSecondaryScope { scope ->
+                            fragment.viewModel.changeItemFirstDirectory(fullPath, it, scope)
+                            fragment.viewModel.update(scope)
                         }
                     }
                 }

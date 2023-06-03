@@ -1,7 +1,6 @@
 package com.gmail.spittelermattijn.sipkip.serial
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.locks.ReentrantLock
@@ -17,7 +16,6 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
     private val results: ArrayList<ByteArray?> = ArrayList()
     private var allResultsReceived = false
     private var failed = false
-    private val scope = CoroutineScope(Dispatchers.Main)
 
     init { executionInstance = null }
 
@@ -33,7 +31,7 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
             launch(context = context, block = block)
     }
 
-    fun postAllExecutionResultsReceived(fail: Boolean) = scope.launch { with(lock) {
+    fun setAllExecutionResultsReceived(fail: Boolean) = with(lock) {
         if (!allResultsReceived) {
             try {
                 failed = fail
@@ -49,23 +47,23 @@ class SerialCommand(private val cb: KFunction1<ByteArray, Unit>, private val com
                 } while (isLocked)
             }
         }
-    }}
+    }
 
-    fun postExecutionResults(datas: ArrayDeque<ByteArray?>) = scope.launch { with(lock) {
+    fun addExecutionResults(datas: ArrayDeque<ByteArray?>) = with(lock) {
         lock()
         results.addAll(datas)
-    }}
+    }
 
-    fun executeBlocking(timeout: Duration) = with(lock) {
+    fun executeBlocking(timeout: Duration, executionResultsScope: CoroutineScope) = with(lock) {
         lock()
         executionInstance = this@SerialCommand
         cb.noException(command.toByteArray())
 
         // Use Dispatchers.Main here to make sure signalCommandExecutionResultsReceived gets run on the same thread.
-        scope.launchIf(timeout != Duration.INFINITE) {
+        executionResultsScope.launchIf(timeout != Duration.INFINITE) {
             lock()
             delay(timeout)
-            postAllExecutionResultsReceived(false)
+            setAllExecutionResultsReceived(false)
         }
 
         try {

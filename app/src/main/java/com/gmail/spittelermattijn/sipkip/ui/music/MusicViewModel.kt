@@ -8,9 +8,9 @@ import com.gmail.spittelermattijn.sipkip.Preferences
 import com.gmail.spittelermattijn.sipkip.serial.SerialCommand
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.ui.ViewModelBase
-import com.gmail.spittelermattijn.sipkip.util.coroutineScope
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
-import kotlinx.coroutines.launch
+import com.gmail.spittelermattijn.sipkip.util.runInSecondaryScope
+import kotlinx.coroutines.CoroutineScope
 import kotlin.properties.Delegates
 import kotlin.reflect.KFunction1
 import kotlin.time.Duration
@@ -21,12 +21,12 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     override val littleFsPath = "/music"
     // This property is only set to a valid callback between onSerialConnect() and disconnect().
     override var serialWriteCallback by Delegates.observable(null as KFunction1<ByteArray, Unit>?) { _, _, new ->
-        coroutineScope.launch { synchronized(getApplication<Application>().applicationContext) {
+        runInSecondaryScope { scope ->
             // Wait for first prompt by sending empty command.
             // TODO: Check why this rarely doesn't work.
-            new?.let { SerialCommand(it, "\n").executeBlocking(DurationLength.Normal.toDuration()) }
-            update()
-        }}
+            new?.let { SerialCommand(it, "\n").executeBlocking(DurationLength.Normal.toDuration(), scope) }
+            update(scope)
+        }
     }
 
     private enum class DurationLength { Normal, Long, Infinite }
@@ -46,9 +46,10 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
         DurationLength.Infinite -> Duration.INFINITE
     }
 
-    private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String) {
+    private fun ArrayList<File>.update(cb: KFunction1<ByteArray, Unit>, path: String, executionResultsScope: CoroutineScope) {
         val pathSlash = "$path${if (path.last() == '/') "" else "/"}"
-        val results = SerialCommand(cb, "ls /littlefs/$pathSlash\n").executeBlocking(DurationLength.Normal.toDuration())
+        val command = SerialCommand(cb, "ls /littlefs/$pathSlash\n")
+        val results = command.executeBlocking(DurationLength.Normal.toDuration(), executionResultsScope)
         for (result in results.map { String(it!!) }) {
             // One result might contain multiple lines, and don't do anything with the prompt.
             for (line in result.split('\n').filter { !(it matches Regexes.PROMPT) }) {
@@ -57,7 +58,7 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
                 if (line matches Regexes.DIRECTORY) { // Directory
                     println("Adding directory: $newPath")
                     add(File(FileType.Directory, newPath))
-                    update(cb, newPath)
+                    update(cb, newPath, executionResultsScope)
                 } else if (line.isNotEmpty()) { // Regular file
                     println("Adding file: $newPath")
                     add(File(FileType.File, newPath))
@@ -94,51 +95,53 @@ class MusicViewModel(application: Application) : ViewModelBase(application) {
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
         if (datas == null)
             return
-        SerialCommand.executionInstance?.postExecutionResults(datas)
+        SerialCommand.executionInstance?.addExecutionResults(datas)
         val lines = datas.map { String(it!!).split('\n') }.flatten()
         // It's okay to do this general of a check, because we would never upload a filename that contains spaces anyway.
         if (lines.any { line -> setOf("Invalid ", "Failed ", "Couldn't ").any { line.startsWith(it) } || line matches Regexes.COMMAND_ERROR })
             executionFailed = true
 
         if (lines.last { it.isNotEmpty() } matches Regexes.PROMPT) {
-            SerialCommand.executionInstance?.postAllExecutionResultsReceived(executionFailed)
+            SerialCommand.executionInstance?.setAllExecutionResultsReceived(executionFailed)
             executionFailed = false
         }
     }
 
-    fun removeItem(fullPath: String) {
+    fun removeItem(fullPath: String, executionResultsScope: CoroutineScope) {
         serialWriteCallback?.let {
-            SerialCommand(it, "rm /littlefs/$fullPath.opus\n").executeBlocking(DurationLength.Normal.toDuration())
-            SerialCommand(it, "rm /littlefs/$fullPath.opus_packets\n").executeBlocking(DurationLength.Normal.toDuration())
+            var command = SerialCommand(it, "rm /littlefs/$fullPath.opus\n")
+            command.executeBlocking(DurationLength.Normal.toDuration(), executionResultsScope)
+            command = SerialCommand(it, "rm /littlefs/$fullPath.opus_packets\n")
+            command.executeBlocking(DurationLength.Normal.toDuration(), executionResultsScope)
         }
     }
 
     // TODO: Check if the destination directory exists in these functions.
-    fun renameItem(fullPath: String, newFullPath: String) {
+    fun renameItem(fullPath: String, newFullPath: String, executionResultsScope: CoroutineScope) {
         serialWriteCallback?.let {
             var command = SerialCommand(it, "mv /littlefs/$fullPath.opus /littlefs/$newFullPath.opus\n")
-            command.executeBlocking(DurationLength.Long.toDuration())
+            command.executeBlocking(DurationLength.Long.toDuration(), executionResultsScope)
             command = SerialCommand(it, "mv /littlefs/$fullPath.opus_packets /littlefs/$newFullPath.opus_packets\n")
-            command.executeBlocking(DurationLength.Long.toDuration())
+            command.executeBlocking(DurationLength.Long.toDuration(), executionResultsScope)
         }
     }
 
-    fun changeItemFirstDirectory(fullPath: String, firstDirectory: String) {
+    fun changeItemFirstDirectory(fullPath: String, firstDirectory: String, executionResultsScope: CoroutineScope) {
         val path = fullPath.removePrefix(littleFsPath)
         val newFullPath = "$littleFsPath/${path.replaceFirst("[^/]+/".toRegex(), "$firstDirectory/")}"
-        renameItem(fullPath, newFullPath)
+        renameItem(fullPath, newFullPath, executionResultsScope)
     }
 
-    fun playItem(fullPath: String) {
+    fun playItem(fullPath: String, executionResultsScope: CoroutineScope) {
         serialWriteCallback?.let {
             val command = SerialCommand(it, "speak /littlefs/$fullPath.opus /littlefs/$fullPath.opus_packets\n")
-            command.executeBlocking(DurationLength.Infinite.toDuration())
+            command.executeBlocking(DurationLength.Infinite.toDuration(), executionResultsScope)
         }
     }
 
-    fun update() {
+    fun update(executionResultsScope: CoroutineScope) {
         exploredPaths.clear(littleFsPath)
-        serialWriteCallback?.let { exploredPaths.update(it, littleFsPath) }
+        serialWriteCallback?.let { exploredPaths.update(it, littleFsPath, executionResultsScope) }
         updateLiveData()
     }
 

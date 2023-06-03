@@ -25,7 +25,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityFindDeviceBinding
 import com.gmail.spittelermattijn.sipkip.serial.SerialSocket
 import com.gmail.spittelermattijn.sipkip.util.compareTo
-import com.gmail.spittelermattijn.sipkip.util.coroutineScope
+import com.gmail.spittelermattijn.sipkip.util.secondaryCoroutineScope
 import com.gmail.spittelermattijn.sipkip.util.parcelable
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.shape.CornerFamily
@@ -46,7 +46,7 @@ class FindDeviceActivity : AppCompatActivity() {
         new?.let {
             // Check if the device is in range.
             @SuppressLint("MissingPermission") val socket = it.createRfcommSocketToServiceRecord(SerialSocket.BLUETOOTH_SPP)
-            coroutineScope.launch {
+            secondaryCoroutineScope.launch {
                 try {
                     @SuppressLint("MissingPermission")
                     val unused = socket.connect()

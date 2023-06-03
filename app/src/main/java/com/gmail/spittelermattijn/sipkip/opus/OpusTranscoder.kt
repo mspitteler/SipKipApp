@@ -9,7 +9,7 @@ import android.os.ParcelFileDescriptor
 import com.gmail.spittelermattijn.sipkip.Preferences
 import com.gmail.spittelermattijn.sipkip.R
 import com.gmail.spittelermattijn.sipkip.opusjni.Opus
-import com.gmail.spittelermattijn.sipkip.util.coroutineScope
+import com.gmail.spittelermattijn.sipkip.util.secondaryCoroutineScope
 import com.gmail.spittelermattijn.sipkip.util.getByteToFloat
 import com.gmail.spittelermattijn.sipkip.util.getIntToFloat
 import com.gmail.spittelermattijn.sipkip.util.getShortToFloat
@@ -185,7 +185,7 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
                     listener.onTranscoderFinished(opusOutput, opusPacketsOutput, args)
                     encoder.close()
                     extractor.release()
-                    coroutineScope.launch {
+                    secondaryCoroutineScope.launch {
                         decoder!!.stop()
                         decoder!!.release()
                     }
