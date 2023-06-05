@@ -15,7 +15,6 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -33,7 +32,7 @@ import com.google.android.material.shape.MaterialShapeDrawable
 import kotlinx.coroutines.launch
 import kotlin.properties.Delegates
 
-class FindDeviceActivity : AppCompatActivity() {
+class FindDeviceActivity : ActivityBase() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityFindDeviceBinding
 
@@ -70,7 +69,7 @@ class FindDeviceActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Preferences.addContextGetter { this }
+        super.onCreate(savedInstanceState)
         val frameSize: Float = Preferences[R.string.encoder_frame_size_key]
         println("frameSize: $frameSize")
         val timeout: Int = Preferences[R.string.bluetooth_command_timeout_key]
@@ -90,7 +89,6 @@ class FindDeviceActivity : AppCompatActivity() {
         val stereo: Boolean = Preferences[R.string.encoder_stereo_key]
         println("stereo: $stereo")
 
-        super.onCreate(savedInstanceState)
         // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
         val settingsActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -184,7 +182,6 @@ class FindDeviceActivity : AppCompatActivity() {
             bluetoothAdapter.isDiscovering)
             bluetoothAdapter.cancelDiscovery()
         super.onDestroy()
-        Preferences.removeContextGetter(this)
     }
 
     @SuppressLint("MissingPermission")

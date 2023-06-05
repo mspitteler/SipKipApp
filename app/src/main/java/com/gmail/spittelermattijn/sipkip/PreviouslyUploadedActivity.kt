@@ -8,7 +8,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -18,7 +17,7 @@ import com.gmail.spittelermattijn.sipkip.databinding.ItemPreviouslyUploadedBindi
 import com.gmail.spittelermattijn.sipkip.util.activity
 import com.google.android.material.card.MaterialCardView
 
-class PreviouslyUploadedActivity : AppCompatActivity() {
+class PreviouslyUploadedActivity : ActivityBase() {
     private lateinit var binding: ActivityPreviouslyUploadedBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {

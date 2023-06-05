@@ -14,7 +14,6 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -39,7 +38,7 @@ import java.util.concurrent.BlockingQueue
 import kotlin.properties.Delegates
 
 
-class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener, OpusTranscoderListener {
+class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTranscoderListener {
     private lateinit var appBarConfiguration: AppBarConfiguration
     internal lateinit var binding: ActivityMainBinding
         private set
@@ -70,7 +69,6 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener, Opu
 
     override fun onCreate(savedInstanceState: Bundle?) {
         isResumed = false
-        Preferences.addContextGetter { this }
         super.onCreate(savedInstanceState)
 
         if (!intent.hasExtra("android.bluetooth.BluetoothDevice") && intent.actionIsShared) {
@@ -191,7 +189,6 @@ class MainActivity : AppCompatActivity(), ServiceConnection, SerialListener, Opu
         stopService(Intent(this, SerialService::class.java))
         try { unbindService(this) } catch (ignored: Exception) {}
         super.onDestroy()
-        Preferences.removeContextGetter(this)
     }
 
     override fun onServiceConnected(name: ComponentName, binder: IBinder) {
