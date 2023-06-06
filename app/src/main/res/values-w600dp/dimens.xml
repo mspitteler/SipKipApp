@@ -5,4 +5,6 @@
     <dimen name="item_music_card_view_corner_radius">16dp</dimen>
     <dimen name="item_music_card_view_length" tools:ignore="MissingDefaultResource">32dp</dimen>
     <dimen name="item_text_view_margin_start" tools:ignore="MissingDefaultResource">16dp</dimen>
+    <dimen name="action_bar_height">52dp</dimen>
+    <dimen name="disk_usage_main_width" tools:ignore="MissingDefaultResource">400dp</dimen>
 </resources>

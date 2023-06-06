@@ -42,6 +42,7 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     private lateinit var appBarConfiguration: AppBarConfiguration
     internal lateinit var binding: ActivityMainBinding
         private set
+    internal var snackBar: Snackbar? = null
     private lateinit var filePickerActivityResultLauncher: ActivityResultLauncher<String>
     private lateinit var previouslyUploadedActivityResultLauncher: ActivityResultLauncher<Intent>
     private var navHostFragment: NavHostFragment? = null
@@ -57,12 +58,15 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     private var isResumed by Delegates.notNull<Boolean>()
     private var service: SerialService? = null
     private val serialQueue: BlockingQueue<Byte> = ArrayBlockingQueue(10000)
+
+    internal var diskUsageUsed = 0L
+    internal var diskUsageTotal = -1L
     /*
      * TODO: Make sure that the app doesn't crash if a fragment is accessed if it is not yet or not anymore attached.
      *       This can happen if a transfer is aborted after we switched fragments for example.
      */
-    internal var serialIsBlocking by Delegates.observable(false) { _, _, new ->
-        currentFragment!!.viewModel.serialWriteCallback = if (new) null else service!!::write
+    internal var serialDispatchedToFragment by Delegates.observable(false) { _, _, new ->
+        currentFragment!!.viewModel.serialWriteCallback = if (new) service!!::write else null
     }
 
     private enum class Connected { False, Pending, True }
@@ -86,7 +90,7 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
             if (uri != null)
                 getContentFd = startTranscoderFromUri(uri)
             else
-                binding.appBarMain.fab?.let { Snackbar.make(it, R.string.snackbar_no_file_picked, Snackbar.LENGTH_LONG).show() }
+                binding.appBarMain.fab?.let { snackBar = Snackbar.make(it, R.string.snackbar_no_file_picked, Snackbar.LENGTH_LONG).apply { show() } }
         }
 
         previouslyUploadedActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -99,7 +103,7 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
                     startSerialUpload("${currentFragment!!.viewModel.littleFsPath}/$it", serialQueue) { service!!::write }
                 }
             } else {
-                binding.appBarMain.fab?.let { Snackbar.make(it, R.string.snackbar_no_file_picked, Snackbar.LENGTH_LONG).show() }
+                binding.appBarMain.fab?.let { snackBar = Snackbar.make(it, R.string.snackbar_no_file_picked, Snackbar.LENGTH_LONG).apply { show() } }
             }
         }
 
@@ -124,6 +128,9 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
         manager.beginTransaction().attach(n).commit()
         navHostFragment = n
         appBarConfiguration = a
+        restoreSnackBar()
+        if (diskUsageTotal != -1L)
+            showDiskUsage(diskUsageUsed, diskUsageTotal)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -219,7 +226,7 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     }
 
     private fun disconnect() {
-        currentFragment!!.viewModel.serialWriteCallback = null
+        serialDispatchedToFragment = false
         connected = Connected.False
         service!!.disconnect()
     }
@@ -230,7 +237,7 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     override fun onSerialConnect() {
         Toast.makeText(this, R.string.toast_connected, Toast.LENGTH_SHORT).show()
         connected = Connected.True
-        currentFragment!!.viewModel.serialWriteCallback = service!!::write
+        startShowDiskUsage(serialQueue) { service!!::write }
     }
 
     override fun onSerialConnectError(e: Exception?) {
@@ -241,20 +248,20 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     }
 
     override fun onSerialRead(data: ByteArray?) {
-        if (serialIsBlocking) {
-            data?.forEach { serialQueue.add(it) }
-        } else {
+        if (serialDispatchedToFragment) {
             val datas = ArrayDeque<ByteArray?>()
             datas.add(data)
             currentFragment!!.viewModel.onSerialRead(datas)
+        } else {
+            data?.forEach { serialQueue.add(it) }
         }
     }
 
     override fun onSerialRead(datas: ArrayDeque<ByteArray?>?) {
-        if (serialIsBlocking)
-            datas?.forEach { it?.forEach { byte -> serialQueue.add(byte) } }
-        else
+        if (serialDispatchedToFragment)
             currentFragment!!.viewModel.onSerialRead(datas)
+        else
+            datas?.forEach { it?.forEach { byte -> serialQueue.add(byte) } }
     }
 
     override fun onSerialIoError(e: Exception?) {
@@ -285,16 +292,15 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     }
 
     override fun onTranscoderStarted(): Any? {
-        var bar: Snackbar? = null
         binding.appBarMain.fab?.let {
-            bar = Snackbar.make(it, R.string.snackbar_processing_file, Snackbar.LENGTH_INDEFINITE)
-            val snackView = bar!!.view as Snackbar.SnackbarLayout
+            snackBar = Snackbar.make(it, R.string.snackbar_processing_file, Snackbar.LENGTH_INDEFINITE)
+            val snackView = snackBar!!.view as Snackbar.SnackbarLayout
             val progressBar = LinearProgressIndicator(this)
             progressBar.isIndeterminate = true
             snackView.addView(progressBar)
-            bar!!.show()
+            snackBar!!.show()
         }
-        return bar
+        return null
     }
 
     override fun onTranscoderFinished(opusOutput: OutputStream, opusPacketsOutput: OutputStream, args: Any?) {
@@ -302,7 +308,7 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
         getContentFd = null
         opusOutput.close()
         opusPacketsOutput.close()
-        (args as? Snackbar?)?.dismiss()
+        snackBar?.dismiss()
 
         MaterialAlertDialogBuilder(this).showFirstDirectoryPicker {
             startSerialUpload("${currentFragment!!.viewModel.littleFsPath}/$it", serialQueue) { service!!::write }

@@ -70,4 +70,5 @@
     <string name="image_view_item_previously_uploaded_content_description">Represents an image view in the item</string>
     <string name="toast_share_first_try_connect">Please open the app first to connect, and only after that try again.</string>
     <string name="toast_no_valid_uri_found_in_intent"><![CDATA[Bad recorder app >:(]]></string>
+    <string name="disk_usage_used">Used: %1$s/%2$s</string>
 </resources>

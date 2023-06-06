@@ -3,4 +3,5 @@
     <dimen name="item_music_card_view_corner_radius">18dp</dimen>
     <dimen name="item_music_card_view_length" tools:ignore="MissingDefaultResource">36dp</dimen>
     <dimen name="item_text_view_margin_start" tools:ignore="MissingDefaultResource">18dp</dimen>
+    <dimen name="disk_usage_main_width" tools:ignore="MissingDefaultResource">702dp</dimen>
 </resources>

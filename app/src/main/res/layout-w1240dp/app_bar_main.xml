@@ -15,9 +15,14 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="@dimen/action_bar_height"
             android:background="?attr/colorSurfaceVariant"
-            app:popupTheme="@style/Theme.SipKip.PopupOverlay" />
+            app:popupTheme="@style/Theme.SipKip.PopupOverlay">
+
+            <include
+                android:id="@+id/disk_usage"
+                layout="@layout/disk_usage_main" />
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 

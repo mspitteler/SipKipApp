@@ -3,9 +3,12 @@ package com.gmail.spittelermattijn.sipkip
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.text.format.Formatter
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.activity.result.ActivityResultLauncher
+import androidx.core.view.allViews
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -13,9 +16,9 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
 import com.gmail.spittelermattijn.sipkip.opus.OpusTranscoder
-import com.gmail.spittelermattijn.sipkip.util.secondaryCoroutineScope
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
 import com.gmail.spittelermattijn.sipkip.util.queryName
+import com.gmail.spittelermattijn.sipkip.util.secondaryCoroutineScope
 import com.gmail.spittelermattijn.sipkip.util.showNewOrPreviouslyUploadedPicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -25,11 +28,14 @@ import com.google.android.material.snackbar.Snackbar
 import jermit.protocol.SerialFileTransferSession
 import jermit.protocol.xmodem.XmodemSender
 import jermit.protocol.xmodem.XmodemSession
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.ByteBuffer
 import java.util.concurrent.BlockingQueue
 import kotlin.reflect.KFunction3
 import kotlin.time.DurationUnit
@@ -42,6 +48,37 @@ fun MainActivity.inflateLayout() = ActivityMainBinding.inflate(layoutInflater).a
     val materialShapeDrawable = it.appBarMain.toolbar.background as MaterialShapeDrawable
     materialShapeDrawable.shapeAppearanceModel = materialShapeDrawable.shapeAppearanceModel.toBuilder()
         .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
+}
+
+fun MainActivity.restoreSnackBar() {
+    binding.appBarMain.fab?.apply fab@ { snackBar?.apply {
+        if (isShown) {
+            // Prepare empty SnackBar.
+            val bar = Snackbar.make(this@fab, "", duration)
+            val snackView = bar.view as Snackbar.SnackbarLayout
+            snackView.removeAllViews()
+
+            val views = view.allViews.filterNot { it is Snackbar.SnackbarLayout }.toMutableList()
+            for (i in views.indices.reversed()) {
+                val view = views[i]
+                (view.parent as ViewGroup).removeView(view)
+                snackView.addView(view)
+            }
+            bar.show()
+            snackBar = bar
+        }
+    }}
+}
+
+fun MainActivity.showDiskUsage(used: Long, total: Long) {
+    val (diskUsageProgress, diskUsageText) = binding.appBarMain.diskUsage.run { Pair(diskUsageProgress, diskUsageText) }
+    diskUsageText.post {
+        diskUsageText.text = getString(
+            R.string.disk_usage_used, Formatter.formatShortFileSize(this, used),
+            Formatter.formatShortFileSize(this, total)
+        )
+    }
+    diskUsageProgress.post { diskUsageProgress.setProgress((used * 100L /* % */ / total).toInt(), true) }
 }
 
 fun MainActivity.setupNavigation(
@@ -103,6 +140,34 @@ fun MainActivity.startTranscoderFromUri(uri: Uri) = contentResolver.openFileDesc
     transcoder.start(opusOutput, opusPacketsOutput)
 }
 
+fun MainActivity.startShowDiskUsage(serialQueue: BlockingQueue<Byte>, writeCbGetter: () -> ((ByteArray?) -> Unit)) {
+    val timeout: Int = Preferences[R.string.bluetooth_command_timeout_key]
+
+    secondaryCoroutineScope.launch {
+        serialDispatchedToFragment = false
+        delay(timeout.toDuration(DurationUnit.MILLISECONDS))
+        serialQueue.clear()
+        writeCbGetter()("du\n".toByteArray())
+
+        val buffer = ByteBuffer.wrap(ByteArray(100))
+        do {
+            val c = withContext(Dispatchers.IO) { serialQueue.take() }
+            buffer.put(c)
+        } while (c != '>'.code.toByte() && buffer.remaining() >= 0)
+        val numbers = """[0-9]+""".toRegex().findAll(
+            String(buffer.array().copyOf(buffer.position())).split('\n').first { it.isNotEmpty() }
+        ).map(MatchResult::value).map(String::toLong).toList()
+
+        if (numbers.size == 2) {
+            diskUsageUsed = numbers[0]
+            diskUsageTotal = numbers[1]
+            showDiskUsage(diskUsageUsed, diskUsageTotal)
+        }
+
+        serialDispatchedToFragment = true
+    }
+}
+
 // Returns true if a new upload was started.
 fun MainActivity.startSerialUpload(pathPrefix: String, serialQueue: BlockingQueue<Byte>, writeCbGetter: () -> ((ByteArray?) -> Unit)): Boolean {
     val `1kThreshold`: Int = Preferences[R.string.xmodem_1k_threshold_key]
@@ -150,7 +215,6 @@ private fun MainActivity.setupSerialUpload(
 ) {
     val timeout: Int = Preferences[R.string.bluetooth_command_timeout_key]
 
-    var snackBar: Snackbar? = null
     var progressBar: ProgressBar? = null
     binding.appBarMain.fab?.post {
         // TODO: Add possibility to cancel transfer.
@@ -164,7 +228,7 @@ private fun MainActivity.setupSerialUpload(
     }
 
     secondaryCoroutineScope.launch {
-        serialIsBlocking = true
+        serialDispatchedToFragment = false
         delay(timeout.toDuration(DurationUnit.MILLISECONDS))
         writeCbGetter()("rm /littlefs/$pathPrefix/$fileName\n".toByteArray())
         delay(timeout.toDuration(DurationUnit.MILLISECONDS))
@@ -179,12 +243,12 @@ private fun MainActivity.setupSerialUpload(
                 done = when (session.state) {
                     SerialFileTransferSession.State.ABORT -> {
                         // Reset serial to normal mode.
-                        serialIsBlocking = false
+                        serialDispatchedToFragment = true
                         true
                     }
                     SerialFileTransferSession.State.END -> {
                         // Recursive call to upload the second file, also restore serial to normal mode if no new upload is started.
-                        serialIsBlocking = cb(pathPrefix, serialQueue, writeCbGetter)
+                        serialDispatchedToFragment = !cb(pathPrefix, serialQueue, writeCbGetter)
                         // All done, bail out.
                         true
                     }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="wrap_content"
+    android:layout_width="@dimen/disk_usage_main_width"
+    android:layout_gravity="end"
+    android:backgroundTint="?attr/colorSurfaceContainerHighest"
+    android:layout_marginHorizontal="@dimen/fragment_horizontal_margin"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/disk_usage_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:textSize="13sp" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/disk_usage_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="false"
+            android:max="100"
+            app:trackCornerRadius="3dp"
+            app:trackThickness="6dp" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
