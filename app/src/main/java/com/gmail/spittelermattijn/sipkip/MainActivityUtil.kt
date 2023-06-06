@@ -28,7 +28,9 @@ import com.google.android.material.snackbar.Snackbar
 import jermit.protocol.SerialFileTransferSession
 import jermit.protocol.xmodem.XmodemSender
 import jermit.protocol.xmodem.XmodemSession
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -140,10 +142,10 @@ fun MainActivity.startTranscoderFromUri(uri: Uri) = contentResolver.openFileDesc
     transcoder.start(opusOutput, opusPacketsOutput)
 }
 
-fun MainActivity.startShowDiskUsage(serialQueue: BlockingQueue<Byte>, writeCbGetter: () -> ((ByteArray?) -> Unit)) {
+fun MainActivity.getDiskUsageAsync(serialQueue: BlockingQueue<Byte>, writeCbGetter: () -> ((ByteArray?) -> Unit)): Deferred<Pair<Long, Long>> {
     val timeout: Int = Preferences[R.string.bluetooth_command_timeout_key]
 
-    secondaryCoroutineScope.launch {
+    return secondaryCoroutineScope.async {
         serialDispatchedToFragment = false
         delay(timeout.toDuration(DurationUnit.MILLISECONDS))
         serialQueue.clear()
@@ -158,13 +160,9 @@ fun MainActivity.startShowDiskUsage(serialQueue: BlockingQueue<Byte>, writeCbGet
             String(buffer.array().copyOf(buffer.position())).split('\n').first { it.isNotEmpty() }
         ).map(MatchResult::value).map(String::toLong).toList()
 
-        if (numbers.size == 2) {
-            diskUsageUsed = numbers[0]
-            diskUsageTotal = numbers[1]
-            showDiskUsage(diskUsageUsed, diskUsageTotal)
-        }
-
         serialDispatchedToFragment = true
+
+        if (numbers.size == 2) Pair(numbers[0], numbers[1]) else Pair(0L, -1L)
     }
 }
 

@@ -32,6 +32,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.OutputStream
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
@@ -59,8 +60,8 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     private var service: SerialService? = null
     private val serialQueue: BlockingQueue<Byte> = ArrayBlockingQueue(10000)
 
-    internal var diskUsageUsed = 0L
-    internal var diskUsageTotal = -1L
+    private var diskUsageUsed = 0L
+    private var diskUsageTotal = -1L
     /*
      * TODO: Make sure that the app doesn't crash if a fragment is accessed if it is not yet or not anymore attached.
      *       This can happen if a transfer is aborted after we switched fragments for example.
@@ -234,10 +235,17 @@ class MainActivity : ActivityBase(), ServiceConnection, SerialListener, OpusTran
     /*
      * SerialListener
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onSerialConnect() {
         Toast.makeText(this, R.string.toast_connected, Toast.LENGTH_SHORT).show()
         connected = Connected.True
-        startShowDiskUsage(serialQueue) { service!!::write }
+        val diskUsage = getDiskUsageAsync(serialQueue) { service!!::write }
+        diskUsage.invokeOnCompletion {
+            val (used, total) = diskUsage.getCompleted()
+            showDiskUsage(used, total)
+            diskUsageUsed = used
+            diskUsageTotal = total
+        }
     }
 
     override fun onSerialConnectError(e: Exception?) {
