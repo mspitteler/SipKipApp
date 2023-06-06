@@ -52,6 +52,7 @@ fun MainActivity.inflateLayout() = ActivityMainBinding.inflate(layoutInflater).a
         .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
 }
 
+// TODO: Fix this for a snack bar with an action.
 fun MainActivity.restoreSnackBar() {
     binding.appBarMain.fab?.apply fab@ { snackBar?.apply {
         if (isShown) {
@@ -215,8 +216,8 @@ private fun MainActivity.setupSerialUpload(
 
     var progressBar: ProgressBar? = null
     binding.appBarMain.fab?.post {
-        // TODO: Add possibility to cancel transfer.
         snackBar = Snackbar.make(binding.appBarMain.fab!!, R.string.snackbar_upload_progress, Snackbar.LENGTH_LONG)
+        snackBar!!.setAction(R.string.snackbar_cancel_transfer) { session.cancelTransfer(false) }
         val snackView = snackBar!!.view as Snackbar.SnackbarLayout
         progressBar = LinearProgressIndicator(this)
         progressBar!!.isIndeterminate = false
@@ -270,7 +271,6 @@ private fun MainActivity.setupSerialUpload(
                     }
                 }
                 val percent = session.percentComplete.toInt()
-                //session.cancelTransfer(false)
                 // Restart timeout.
                 snackBar?.show()
                 progressBar?.post { progressBar!!.progress = percent }
