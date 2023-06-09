@@ -88,6 +88,8 @@ class FindDeviceActivity : ActivityBase() {
         println("bitrate: $bitrate")
         val stereo: Boolean = Preferences[R.string.encoder_stereo_key]
         println("stereo: $stereo")
+        val useAGC: Boolean = Preferences[R.string.encoder_use_agc_key]
+        println("useAGC: $useAGC")
 
         // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
         val settingsActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(

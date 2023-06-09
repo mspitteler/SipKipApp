@@ -9,4 +9,5 @@
     <string translatable="false" name="encoder_stereo_key">encoder_stereo</string>
     <string translatable="false" name="encoder_bitrate_key">encoder_bitrate</string>
     <string translatable="false" name="encoder_frame_size_key">encoder_frame_size</string>
+    <string translatable="false" name="encoder_use_agc_key">encoder_use_agc</string>
 </resources>

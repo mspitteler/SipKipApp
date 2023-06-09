@@ -1,5 +1,6 @@
 package com.gmail.spittelermattijn.sipkip.opus
 
+import android.annotation.SuppressLint
 import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaCodecList
@@ -21,7 +22,9 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.ceil
-import kotlin.math.round
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
+import kotlin.properties.Delegates
 
 class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDescriptor) {
     @Suppress("Unused")
@@ -36,13 +39,14 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
     private val encoder = Opus()
     private val extractor = MediaExtractor()
     private var decoder: MediaCodec? = null
-    private var resampleBuffer: ByteBuffer? = null
-    private var sos = true
     private var args: Any? = null
 
     private val encoderSampleRate: Int = Preferences[R.string.encoder_sample_rate_key]
     private val encoderChannelCount: Int = if (Preferences[R.string.encoder_stereo_key]) 2 else 1
     private val encoderBitrate: Int = Preferences[R.string.encoder_bitrate_key]
+    private val encoderUseAGC: Boolean = Preferences[R.string.encoder_use_agc_key]
+
+    private data class Format(val rate: Int = -1, val encoding: Int = AudioFormat.ENCODING_INVALID, val count: Int = -1)
 
     init {
         encoder.open(encoderChannelCount, encoderSampleRate, encoderBitrate)
@@ -99,7 +103,15 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
 
     fun start(opusOutput: OutputStream, opusPacketsOutput: OutputStream) {
         val encoderFrameSize = Preferences.get<Float>(R.string.encoder_frame_size_key) * encoderSampleRate / 1000f
+
         decoder?.setCallback(object : MediaCodec.Callback() {
+            private var lastFormat = Format()
+            private val encoderFormat = Format(encoderSampleRate, ENCODER_PCM_ENCODING, encoderChannelCount)
+            private lateinit var resampler: Resampler
+
+            private var resampleBuffer: ByteBuffer? = null
+            private var sos = true
+
             override fun onInputBufferAvailable(mc: MediaCodec, inputBufferId: Int) {
                 val inputBuffer = mc.getInputBuffer(inputBufferId)!!
                 // Fill inputBuffer with valid data
@@ -125,40 +137,42 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
                     resampleBuffer = ByteBuffer.allocate(outputBuffer!!.capacity())
 
                 if (outputBufferInfo.flags != MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
-                    val rate = bufferFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
-                    val encoding = if (bufferFormat.containsKey(MediaFormat.KEY_PCM_ENCODING))
-                        bufferFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
-                    else
-                        ENCODER_PCM_ENCODING
-
-                    val count = bufferFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-                    if (rate != encoderSampleRate || encoding != ENCODER_PCM_ENCODING || count != encoderChannelCount) {
-                        // Resample here
-                        Resampler.resample(
-                            AudioFormat.Builder().setSampleRate(rate)
-                                .setEncoding(encoding)
-                                .setChannelMask(if (count == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO)
+                    val format = Format(
+                        bufferFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE),
+                        if (bufferFormat.containsKey(MediaFormat.KEY_PCM_ENCODING)) bufferFormat.getInteger(MediaFormat.KEY_PCM_ENCODING) else ENCODER_PCM_ENCODING,
+                        bufferFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                    )
+                    if (format != lastFormat) {
+                        lastFormat = format
+                        @SuppressLint("WrongConstant")
+                        resampler = Resampler(
+                            AudioFormat.Builder().setSampleRate(format.rate)
+                                .setEncoding(format.encoding)
+                                .setChannelMask(if (format.count == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO)
                                 .build(),
-                            outputBuffer!!,
                             AudioFormat.Builder().setSampleRate(encoderSampleRate)
                                 .setEncoding(ENCODER_PCM_ENCODING)
                                 .setChannelMask(if (encoderChannelCount == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO)
                                 .build(),
-                            resampleBuffer!!
+                            encoderUseAGC
                         )
-                    } else {
-                        resampleBuffer!!.put(outputBuffer!!)
                     }
+
+                    if (format != encoderFormat)
+                        // Resample here
+                        resampler.resample(outputBuffer!!, resampleBuffer!!)
+                    else
+                        resampleBuffer!!.put(outputBuffer!!)
                 } else {
                     eos = true
                 }
 
-                if (resampleBuffer!!.position() >= encoderFrameSize * encoderChannelCount * 2 || eos) {
+                if (resampleBuffer!!.position() >= encoderFrameSize * encoderChannelCount * 2f || eos) {
                     // Put buffer into read mode.
                     resampleBuffer!!.flip()
                     var size = resampleBuffer!!.remaining()
-                    while (size >= encoderFrameSize * encoderChannelCount * 2) {
-                        ByteArray(round(encoderFrameSize * encoderChannelCount * 2f).toInt()).let {
+                    while (size >= encoderFrameSize * encoderChannelCount * 2f) {
+                        ByteArray((encoderFrameSize * encoderChannelCount * 2f).roundToInt()).let {
                             resampleBuffer!!.get(it)
                             val shortArray = ShortArray(it.size / 2)
                             ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shortArray)
@@ -167,7 +181,7 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
                             // Little endian.
                             opusPacketsOutput.write(byteArrayOf((result.size and 0xFF).toByte(), (result.size shl 8).toByte()))
                         }
-                        size -= round(encoderFrameSize * encoderChannelCount * 2f).toInt()
+                        size -= (encoderFrameSize * encoderChannelCount * 2f).roundToInt()
                     }
                     // Make available for writing again.
                     resampleBuffer!!.compact()
@@ -207,17 +221,28 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
         const val ENCODER_PCM_ENCODING = AudioFormat.ENCODING_PCM_16BIT
     }
 
-    private class Resampler constructor(private val resampleRatio: Float, channelCount: Int) {
-
-        constructor(inSampleRate: Int, outSampleRate: Int, channelCount: Int) :
-                this(outSampleRate.toFloat() / inSampleRate, channelCount)
-
+    private class Resampler(inputFormat: AudioFormat, outputFormat: AudioFormat, useAGC: Boolean) {
         private var index = 0
         private var lastPos = Float.NaN
+
+        private object Squares {
+            private var sumElements = 0
+            val mean get() = sum / sumElements
+            var sum by Delegates.observable(0f) { _, _, new -> sumElements = if (new == 0f) 0 else sumElements + 1 }
+        }
+
+        private var clipped = false
+
+        private val channelCount = inputFormat.channelCount
+        private val resampleRatio = outputFormat.sampleRate.toFloat() / inputFormat.sampleRate
+        private val readFrame = inputFormat.newFrameReader()
+        private val writeFrame = outputFormat.newFrameWriter()
+        private val processor: (FloatArray, Float, (FloatArray) -> Unit) -> Int = if (useAGC) ::process else ::processIgnoreGain
+
         private val lastValues = FloatArray(channelCount)
         private val tempValues = FloatArray(channelCount)
 
-        fun process(values: FloatArray, emit: (FloatArray) -> Unit) {
+        fun processIgnoreGain(values: FloatArray, @Suppress("UNUSED_PARAMETER") gain: Float, emit: (FloatArray) -> Unit): Int {
             val pos = index * resampleRatio
             if (lastPos.isNaN()) {
                 val initialValues = values.copyInto(tempValues)
@@ -237,29 +262,78 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
             values.copyInto(lastValues)
             lastPos = pos
             index++
+
+            return 0
+        }
+
+        fun process(values: FloatArray, gain: Float, emit: (FloatArray) -> Unit): Int {
+            val pos = index * resampleRatio
+            if (lastPos.isNaN()) {
+                val initialValues = values.map { it * gain }.toFloatArray()
+                emit(initialValues)
+            } else {
+                for (p in ceil(lastPos + EPSILON).toInt()..pos.toInt()) {
+                    val interpolated = tempValues.apply {
+                        indices.forEach { channel ->
+                            val value = (values[channel] * (p - lastPos) + lastValues[channel] * (pos - p)) / (pos - lastPos) * gain
+                            Squares.sum += value * value
+                            if (value !in -AGC_PEAK_CLIP_DETECT_THRESHOLD..AGC_PEAK_CLIP_DETECT_THRESHOLD)
+                                clipped = true
+                            set(channel, value)
+                        }
+                    }
+
+                    emit(interpolated)
+                }
+            }
+
+            values.copyInto(lastValues)
+            lastPos = pos
+            index++
+
+            return when {
+                clipped -> {
+                    clipped = false
+                    -1
+                }
+                index % 64 == 0 -> {
+                    val rootMeanSquare = sqrt(Squares.mean)
+                    println(rootMeanSquare)
+                    Squares.sum = 0f
+                    if (rootMeanSquare in 0.01f..AGC_RMS_GAIN_INCREASE_THRESHOLD) 1 else 0
+                }
+                else -> 0
+            }
+        }
+
+        fun resample(input: ByteBuffer, output: ByteBuffer) {
+            input.order(ByteOrder.LITTLE_ENDIAN)
+            output.order(ByteOrder.LITTLE_ENDIAN)
+
+            index = 0
+            lastPos = Float.NaN
+            Squares.sum = 0f
+            clipped = false
+            try {
+                while (true) {
+                    val operation = processor(input.readFrame(), agcGain) {
+                        output.writeFrame(it)
+                    }
+                    agcGain = (agcGain + operation * if (operation > 0) AGC_GAIN_INCREMENT else AGC_GAIN_DECREMENT).coerceAtLeast(1f)
+                }
+            } catch (e: RuntimeException) {
+                // BufferUnderflowException / BufferOverflowException
+            }
         }
 
         companion object {
             private const val EPSILON = 0.002f
 
-            fun resample(inputFormat: AudioFormat, input: ByteBuffer, outputFormat: AudioFormat, output: ByteBuffer) {
-                input.order(ByteOrder.LITTLE_ENDIAN)
-                output.order(ByteOrder.LITTLE_ENDIAN)
-
-                val resampler = Resampler(inputFormat.sampleRate, outputFormat.sampleRate, inputFormat.channelCount)
-                val readFrame = inputFormat.newFrameReader()
-                val writeFrame = outputFormat.newFrameWriter()
-
-                try {
-                    while (true) {
-                        resampler.process(input.readFrame()) {
-                            output.writeFrame(it)
-                        }
-                    }
-                } catch (e: RuntimeException) {
-                    // BufferUnderflowException / BufferOverflowException
-                }
-            }
+            private const val AGC_GAIN_INCREMENT = 0.012f
+            private const val AGC_GAIN_DECREMENT = 0.16f
+            private const val AGC_PEAK_CLIP_DETECT_THRESHOLD = 0.8f
+            private const val AGC_RMS_GAIN_INCREASE_THRESHOLD = 0.4f
+            private var agcGain = 1f
 
             private fun AudioFormat.newFrameReader(): ByteBuffer.() -> FloatArray {
                 val readSample: ByteBuffer.() -> Float = when (encoding) {

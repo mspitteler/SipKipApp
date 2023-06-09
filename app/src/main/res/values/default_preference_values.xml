@@ -9,4 +9,5 @@
     <bool name="default_encoder_stereo">false</bool>
     <integer name="default_encoder_bitrate">16000</integer>
     <dimen name="default_encoder_frame_size" format="float">60.0</dimen>
+    <bool name="default_encoder_use_agc">true</bool>
 </resources>
