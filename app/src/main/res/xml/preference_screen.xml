@@ -90,5 +90,13 @@
             android:title="@string/preference_title_encoder_frame_size"
             app:useSimpleSummaryProvider="true"/>
 
+        <SwitchPreferenceCompat
+            android:key="@string/encoder_use_agc_key"
+            android:defaultValue="@bool/default_encoder_use_agc"
+            android:widgetLayout="@layout/material_switch_preference"
+            android:title="@string/preference_title_encoder_use_agc"
+            android:summaryOn="@string/preference_summary_on_encoder_use_agc"
+            android:summaryOff="@string/preference_summary_off_encoder_use_agc"/>
+
     </PreferenceCategory>
 </PreferenceScreen>

@@ -72,4 +72,7 @@
     <string name="toast_no_valid_uri_found_in_intent"><![CDATA[Bad recorder app >:(]]></string>
     <string name="disk_usage_used">Used: %1$s/%2$s</string>
     <string name="snackbar_cancel_transfer">Cancel upload</string>
+    <string name="preference_title_encoder_use_agc">AGC during audio processing.</string>
+    <string name="preference_summary_on_encoder_use_agc">Use automatic gain control while processing audio.</string>
+    <string name="preference_summary_off_encoder_use_agc">Don\'t use automatic gain control while processing audio.</string>
 </resources>
