@@ -298,7 +298,6 @@ class OpusTranscoder(val listener: OpusTranscoderListener, input: ParcelFileDesc
                 }
                 index % 64 == 0 -> {
                     val rootMeanSquare = sqrt(Squares.mean)
-                    println(rootMeanSquare)
                     Squares.sum = 0f
                     if (rootMeanSquare in 0.01f..AGC_RMS_GAIN_INCREASE_THRESHOLD) 1 else 0
                 }
