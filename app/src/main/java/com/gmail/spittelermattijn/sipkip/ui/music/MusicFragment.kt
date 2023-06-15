@@ -28,6 +28,7 @@ import com.gmail.spittelermattijn.sipkip.databinding.ItemMusicBinding
 import com.gmail.spittelermattijn.sipkip.util.showFirstDirectoryPicker
 import com.gmail.spittelermattijn.sipkip.util.showRenameEditText
 import com.gmail.spittelermattijn.sipkip.ui.FragmentInterface
+import com.gmail.spittelermattijn.sipkip.util.parentViewGroup
 import com.gmail.spittelermattijn.sipkip.util.runInSecondaryScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -107,7 +108,7 @@ class MusicFragment : Fragment(), FragmentInterface {
                 }
                 imageView.setOnClickListener {
                     val fragment: MusicFragment = it.findFragment()
-                    val siblings = (it.parent as ViewGroup).children
+                    val siblings = it.parentViewGroup.children
                     runInSecondaryScope { scope ->
                         fragment.viewModel.playItem(siblings.find { v -> v.id == R.id.card_view_item_music }?.contentDescription.toString(), scope)
                     }

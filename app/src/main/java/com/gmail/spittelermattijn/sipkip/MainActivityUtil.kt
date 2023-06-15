@@ -17,6 +17,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.gmail.spittelermattijn.sipkip.databinding.ActivityMainBinding
 import com.gmail.spittelermattijn.sipkip.opus.OpusTranscoder
 import com.gmail.spittelermattijn.sipkip.util.filterValidOpusPaths
+import com.gmail.spittelermattijn.sipkip.util.parentViewGroup
 import com.gmail.spittelermattijn.sipkip.util.queryName
 import com.gmail.spittelermattijn.sipkip.util.secondaryCoroutineScope
 import com.gmail.spittelermattijn.sipkip.util.showNewOrPreviouslyUploadedPicker
@@ -64,7 +65,7 @@ fun MainActivity.restoreSnackBar() {
             // Only add views that are the SnackbarContentLayout or extra added views.
             val views = view.allViews.filterNot { it is Snackbar.SnackbarLayout || it.parent is SnackbarContentLayout }.toMutableList()
             for (view in views) {
-                (view.parent as ViewGroup).removeView(view)
+                view.parentViewGroup.removeView(view)
                 snackView.addView(view)
             }
             bar.show()
