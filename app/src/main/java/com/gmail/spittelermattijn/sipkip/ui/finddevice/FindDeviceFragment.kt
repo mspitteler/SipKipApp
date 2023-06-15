@@ -1,6 +1,5 @@
 package com.gmail.spittelermattijn.sipkip.ui.finddevice
 
-import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater

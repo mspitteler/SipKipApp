@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.text.format.Formatter
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.view.allViews
