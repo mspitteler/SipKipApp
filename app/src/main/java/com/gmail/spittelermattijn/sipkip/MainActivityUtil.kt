@@ -25,6 +25,7 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.snackbar.SnackbarContentLayout
 import jermit.protocol.SerialFileTransferSession
 import jermit.protocol.xmodem.XmodemSender
 import jermit.protocol.xmodem.XmodemSession
@@ -52,7 +53,6 @@ fun MainActivity.inflateLayout() = ActivityMainBinding.inflate(layoutInflater).a
         .setAllCorners(CornerFamily.ROUNDED, Int.MAX_VALUE.toFloat()).build()
 }
 
-// TODO: Fix this for a snack bar with an action.
 fun MainActivity.restoreSnackBar() {
     binding.appBarMain.fab?.apply fab@ { snackBar?.apply {
         if (isShown) {
@@ -61,9 +61,9 @@ fun MainActivity.restoreSnackBar() {
             val snackView = bar.view as Snackbar.SnackbarLayout
             snackView.removeAllViews()
 
-            val views = view.allViews.filterNot { it is Snackbar.SnackbarLayout }.toMutableList()
-            for (i in views.indices.reversed()) {
-                val view = views[i]
+            // Only add views that are the SnackbarContentLayout or extra added views.
+            val views = view.allViews.filterNot { it is Snackbar.SnackbarLayout || it.parent is SnackbarContentLayout }.toMutableList()
+            for (view in views) {
                 (view.parent as ViewGroup).removeView(view)
                 snackView.addView(view)
             }
@@ -208,6 +208,7 @@ fun MainActivity.startSerialUpload(pathPrefix: String, serialQueue: BlockingQueu
     return true
 }
 
+// TODO: Upload fails with TOO MANY ERRORS with XMODEM 1K for some files.
 private fun MainActivity.setupSerialUpload(
     session: SerialFileTransferSession, pathPrefix: String, fileName: String, serialQueue: BlockingQueue<Byte>,
     writeCbGetter: () -> ((ByteArray?) -> Unit), cb: KFunction3<String, BlockingQueue<Byte>, () -> ((ByteArray?) -> Unit), Boolean>
